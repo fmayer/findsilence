@@ -104,3 +104,12 @@ class Audio(wave.Wave_read):
             ##print self.frames
         self.rewind()
         return unify(silence)
+    
+    def split_silence(self, silence):
+        from_pos = 0
+        ret = []
+        for to_pos, next_from in silence:
+            self.setpos(from_pos)
+            ret.append(self.readframes(to_pos-from_pos))
+            from_pos = next_from
+        return ret
