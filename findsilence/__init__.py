@@ -20,10 +20,13 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+""" This module provides functionality to split files by silence detection """
+
 import wave
 import audioop
 
 def unify(lst):
+    """ ((50, 100), (100, 150), (190, 210)) -> ((50, 150), (190, 210)) """
     ret = [list(lst[0])]
     lst = lst[1:]
     for elem in lst:
@@ -36,6 +39,7 @@ def unify(lst):
 
 
 class Audio(wave.Wave_read):
+    """ Improve functionality for wave.Wave_read """
     def __init__(self, file_name):
         wave.Wave_read.__init__(self, file_name)
         self.width = self.getsampwidth()
@@ -65,7 +69,7 @@ class Audio(wave.Wave_read):
         A normal value for a 33 phono is 80000 to get the position of the songs.
         """
         afterloop_frames = 20
-        median_volume = self.median_volume()
+        ##median_volume = self.median_volume()
         width = self.width
         frames = self.frames
         i = self.tell()
@@ -83,8 +87,8 @@ class Audio(wave.Wave_read):
             if volume < silence_cap:
                 # Segment is silence!
                 silence.append([i, i+read_frames])
-                # Maybe we should try and see if the silence goes on longer
-                # by continuing in smaller setps
+                # Continue searching in smaller steps whether the silence is 
+                # longer than read_frames but smaller than read_frames*2.
                 while volume < silence_cap and self.tell() < self.frames:
                     ##print "*"
                     frame = self.readframes(afterloop_frames)
@@ -95,7 +99,7 @@ class Audio(wave.Wave_read):
                     i = tmp
                     set_i = False
             if set_i:
-                i+=read_frames
+                i += read_frames
             ##print i
             ##print self.frames
         self.rewind()
