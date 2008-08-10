@@ -28,6 +28,7 @@ import os
 import os.path
 import sys
 
+
 def unify(lst):
     """ ((50, 100), (100, 150), (190, 210)) -> ((50, 150), (190, 210)) """
     ret = [list(lst[0])]
@@ -133,16 +134,22 @@ class Audio(wave.Wave_read):
 def split_phono(file_name, directory):
     os.mkdir(directory)
     audio = Audio(file_name)
-    silence = audio.get_silence(80000)
+    silence = audio.get_silence(80000, 300)
     split_tracks = audio.split_silence(silence)
     for i, split_track in enumerate(split_tracks):
-        f_name = os.path.join(directory, "track_%.2d.wav")
+        if len(split_track) < 430275:
+            # Skip tracks shorter than 10 seconds.
+            # As on phonos that could be the
+            continue
+        f_name = os.path.join(directory, "track_%.2d.wav" % i)
         audio.write_frames(f_name, split_track)
+
 
 def main(file_name):
     directory = os.path.splitext(os.path.split(file_name)[1])[0]
     directory = os.path.abspath(directory)
     split_phono(file_name, directory)
     
+
 if __name__ == "__main__":
     main(sys.argv[1])
