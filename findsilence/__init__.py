@@ -28,6 +28,8 @@ import os
 import os.path
 import sys
 
+class FileExists(Exception):
+    pass
 
 def unify(lst):
     """ ((50, 100), (100, 150), (190, 210)) -> ((50, 150), (190, 210)) """
@@ -132,7 +134,10 @@ class Audio(wave.Wave_read):
 
 
 def split_phono(file_name, directory):
-    os.mkdir(directory)
+    if not os.path.exists(directory):
+        os.mkdir(directory)
+    elif os.path.isfile(directory):
+        raise FileExists("The directory you supplied is a file.")
     audio = Audio(file_name)
     silence = audio.get_silence(80000, 300)
     split_tracks = audio.split_silence(silence)
