@@ -24,6 +24,9 @@
 
 import wave
 import audioop
+import os
+import os.path
+import sys
 
 def unify(lst):
     """ ((50, 100), (100, 150), (190, 210)) -> ((50, 150), (190, 210)) """
@@ -44,6 +47,7 @@ class Audio(wave.Wave_read):
         wave.Wave_read.__init__(self, file_name)
         self.width = self.getsampwidth()
         self.frames = self.getnframes()
+        self.channels = self.getnchannels()
     
     def median_volume(self):
         """ Median volume for the whole file """
@@ -113,3 +117,32 @@ class Audio(wave.Wave_read):
             ret.append(self.readframes(to_pos-from_pos))
             from_pos = next_from
         return ret
+
+
+    def write_frames(self, file_name, frames):
+        f = wave.open(file_name, 'wb')
+        f.setnchannels(self.channels)
+        f.setsampwidth(self.width)
+        f.setframerate(self.getframerate())
+        try:
+            f.writeframes(frames)
+        finally:
+            f.close()
+
+
+def split_phono(file_name, directory):
+    os.mkdir(directory)
+    audio = Audio(file_name)
+    silence = audio.get_silence(80000)
+    split_tracks = audio.split_silence(silence)
+    for i, split_track in enumerate(split_tracks):
+        f_name = os.path.join(directory, "track_%.2d.wav")
+        audio.write_frames(f_name, split_track)
+
+def main(file_name):
+    directory = os.path.splitext(os.path.split(file_name)[1])[0]
+    directory = os.path.abspath(directory)
+    split_phono(file_name, directory)
+    
+if __name__ == "__main__":
+    main(sys.argv[1])
