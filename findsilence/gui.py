@@ -16,8 +16,12 @@ class MainPanel(wx.PyPanel):
         wx.PyPanel.__init__(self, parent)
         sizer = wx.BoxSizer(wx.VERTICAL)
         
+        wildcard = 'WAV files (*.wav)|*.wav'
+        
+        
         self.file_select = wx.FilePickerCtrl(self, 
-                                             message=_("Select Input File"))
+                                             message=_("Select Input File"),
+                                             wildcard=wildcard)
         self.dir_select = wx.DirPickerCtrl(self, 
                                            message=_("Select output directory"),
                                            style=wx.DIRP_CHANGE_DIR)
@@ -37,7 +41,7 @@ class MainPanel(wx.PyPanel):
         
         sizer.Add(file_sizer, 1, wx.ALL | wx.EXPAND)
         sizer.Add(dir_sizer, 1, wx.ALL | wx.EXPAND)
-        sizer.Add(execute)
+        sizer.Add(execute, 1, wx.EXPAND)
         
         execute.Bind(wx.EVT_BUTTON, self.on_execute)
         
@@ -55,7 +59,7 @@ class MainPanel(wx.PyPanel):
         
 class MainFrame(wx.Frame):
     def __init__(self):
-        wx.Frame.__init__(self, None)
+        wx.Frame.__init__(self, None, -1, "Split WAV")
         self.panel = MainPanel(self)
         self.Fit()
         
