@@ -26,9 +26,8 @@ sys.path.append(os.path.join(script_path, '..'))
 
 import findsilence
 
-def _(s):
-    """ Dummy gettext function """
-    return s
+# Dummy gettext.
+_ = lambda s: s
 
 
 class AdvancedSettings(wx.Dialog):
@@ -39,7 +38,7 @@ class AdvancedSettings(wx.Dialog):
         
         self.pauses = wx.SpinCtrl(self, initial=2)
         pause_sizer.Add(wx.StaticText(self, -1, _(
-            "Length of Pauses (in sec): ")), 0, 
+            _("Length of Pauses (in sec): "))), 0, 
                         wx.ALIGN_CENTER_VERTICAL)
         pause_sizer.Add(self.pauses, 1, wx.EXPAND)
         main_sizer.Add(pause_sizer, 1, wx.EXPAND | wx.ALL)
