@@ -23,6 +23,7 @@ import os.path
 import sys
 
 class FileExists(Exception):
+    """ This is raised when the directory passed to split_phono is a file """
     pass
 
 
@@ -113,6 +114,8 @@ class Audio(wave.Wave_read):
         return ret
 
     def write_frames(self, file_name, frames):
+        """ Write the frames into file_name with the same header as the 
+        original file had """
         f = wave.open(file_name, 'wb')
         f.setnchannels(self.channels)
         f.setsampwidth(self.width)
