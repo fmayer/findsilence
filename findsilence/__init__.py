@@ -100,6 +100,10 @@ class Audio(wave.Wave_read):
         return unify(silence)
     
     def split_silence(self, silence):
+        """ Split the file according to the silence contained in silence. This 
+        is usually the return value of Audio.get_silence.
+        
+        Returns a list of frames, each being a separate song """
         from_pos = 0
         ret = []
         for to_pos, next_from in silence:
@@ -119,13 +123,15 @@ class Audio(wave.Wave_read):
             f.close()
 
 
-def split_phono(file_name, directory, pause_seconds=2):
+def split_phono(file_name, directory, pause_seconds=2, volume_cap=300):
+    """ Only change pause_seconds or volume_cap if you are sure what you are 
+    doing! """
     if not os.path.exists(directory):
         os.mkdir(directory)
     elif os.path.isfile(directory):
         raise FileExists("The directory you supplied is a file.")
     audio = Audio(file_name)
-    silence = audio.get_silence(pause_seconds, 300)
+    silence = audio.get_silence(pause_seconds, volume_cap)
     split_tracks = audio.split_silence(silence)
     for i, split_track in enumerate(split_tracks):
         if len(split_track) < 10 * audio.framerate:
@@ -137,6 +143,7 @@ def split_phono(file_name, directory, pause_seconds=2):
 
 
 def main(file_name):
+    """ Main command-line interface """
     directory = os.path.splitext(os.path.split(file_name)[1])[0]
     directory = os.path.abspath(directory)
     split_phono(file_name, directory)

@@ -90,6 +90,7 @@ class MainPanel(wx.PyPanel):
     def on_execute(self, evt):
         file_name = os.path.abspath(self.file_select.Path)
         directory = os.path.abspath(self.dir_select.GetPath())
+        frames = self.Parent.pauses
         try:
             findsilence.split_phono(file_name, directory, frames)
         except findsilence.FileExists:
