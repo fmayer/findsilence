@@ -46,6 +46,7 @@ class Audio(wave.Wave_read):
         self.width = self.getsampwidth()
         self.frames = self.getnframes()
         self.channels = self.getnchannels()
+        self.framerate = self.getframerate()
     
     def median_volume(self):
         """ Median volume for the whole file """
@@ -58,34 +59,25 @@ class Audio(wave.Wave_read):
         self.setpos(pos)
         return median_volume
     
-    def get_silence(self, read_frames=50, silence_cap=500):
+    def get_silence(self, pause_seconds=2, silence_cap=500):
         """ 
-        Frames
-        ======
-        Conversion from frames to time is about as following:
-        
-        2581655 frames => a minute 
-        430275 frames => 10 seconds
-        43027 frames => 1 second
-        
-        A normal value for a 33 phono is 80000 to get the position of the songs.
+        pause_seconds is either an int or a float containing the minimum length 
+        of a pause. Silence cap defines what volume level is considered silence.
         """
+        read_frames = int(pause_seconds * self.framerate)
         afterloop_frames = 20
         ##median_volume = self.median_volume()
         width = self.width
         frames = self.frames
         i = self.tell()
         silence = []
-        test = []
-        # This reads read_frames frames from *every* frame in the stream
-        # This may be really unperformant, but ensures that all of the silence
-        # is captured.
+        # This scans the file in steps of read_frames whether a section's volume
+        # is lower than silence_cap, if it is it is written to silence.
         while i < frames:
             set_i = True
             ##print '.'
             frame = self.readframes(read_frames)
             volume = audioop.rms(frame, width)
-            test.append(volume)
             if volume < silence_cap:
                 # Segment is silence!
                 silence.append([i, i+read_frames])
@@ -120,23 +112,23 @@ class Audio(wave.Wave_read):
         f = wave.open(file_name, 'wb')
         f.setnchannels(self.channels)
         f.setsampwidth(self.width)
-        f.setframerate(self.getframerate())
+        f.setframerate(self.framerate)
         try:
             f.writeframes(frames)
         finally:
             f.close()
 
 
-def split_phono(file_name, directory, frames=80000):
+def split_phono(file_name, directory, pause_seconds=2):
     if not os.path.exists(directory):
         os.mkdir(directory)
     elif os.path.isfile(directory):
         raise FileExists("The directory you supplied is a file.")
     audio = Audio(file_name)
-    silence = audio.get_silence(frames, 300)
+    silence = audio.get_silence(pause_seconds, 300)
     split_tracks = audio.split_silence(silence)
     for i, split_track in enumerate(split_tracks):
-        if len(split_track) < 430275:
+        if len(split_track) < 10 * audio.framerate:
             # Skip tracks shorter than 10 seconds.
             # As on old records that could be the pick-up.
             continue
