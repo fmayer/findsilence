@@ -1,4 +1,4 @@
-# Split WAV - Split long WAV files into tracks
+# findsilence - Split long WAV files into tracks
 # Copyright (C) 2008 Florian Mayer
 
 # This program is free software: you can redistribute it and/or modify
@@ -21,7 +21,8 @@ import math
 
 from wx.lib.wordwrap import wordwrap
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+script_path = os.path.abspath(os.path.dirname(__file__))
+sys.path.append(os.path.join(script_path, '..'))
 
 import findsilence
 
@@ -126,8 +127,8 @@ class MainFrame(wx.Frame):
             self.pauses = opts.pauses.Value
         
     def on_about(self, evt):
-        license = open(os.path.join(
-            os.path.abspath(os.path.dirname(__file__)), '..', "COPYING"))
+        license = open(os.path.abspath(os.path.join(script_path,
+            '..', "COPYING")))
         license = license.read()
         
         info = wx.AboutDialogInfo()

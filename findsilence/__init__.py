@@ -1,4 +1,4 @@
-# Split WAV - Split long WAV files into tracks
+# findsilence - Split long WAV files into tracks
 # Copyright (C) 2008 Florian Mayer
 
 # This program is free software: you can redistribute it and/or modify
@@ -125,7 +125,7 @@ class Audio(wave.Wave_read):
 
 def split_phono(file_name, directory, pause_seconds=2, volume_cap=300):
     """ Only change pause_seconds or volume_cap if you are sure what you are 
-    doing! """
+    doing! They seem to be working pretty good for old records. """
     if not os.path.exists(directory):
         os.mkdir(directory)
     elif os.path.isfile(directory):
