@@ -65,9 +65,10 @@ class Audio(wave.Wave_read):
         pause_seconds is either an int or a float containing the minimum length 
         of a pause. Silence cap defines what volume level is considered silence.
         """
+        # Find out how many frames the passed second value is
         read_frames = int(pause_seconds * self.framerate)
+        # Once silence has been found, continue searching in this interval
         afterloop_frames = 20
-        ##median_volume = self.median_volume()
         width = self.width
         frames = self.frames
         i = self.tell()
@@ -76,7 +77,6 @@ class Audio(wave.Wave_read):
         # is lower than silence_cap, if it is it is written to silence.
         while i < frames:
             set_i = True
-            ##print '.'
             frame = self.readframes(read_frames)
             volume = audioop.rms(frame, width)
             if volume < silence_cap:
@@ -85,7 +85,6 @@ class Audio(wave.Wave_read):
                 # Continue searching in smaller steps whether the silence is 
                 # longer than read_frames but smaller than read_frames*2.
                 while volume < silence_cap and self.tell() < self.frames:
-                    ##print "*"
                     frame = self.readframes(afterloop_frames)
                     volume = audioop.rms(frame, width)
                 else:
@@ -95,8 +94,6 @@ class Audio(wave.Wave_read):
                     set_i = False
             if set_i:
                 i += read_frames
-            ##print i
-            ##print self.frames
         self.rewind()
         return unify(silence)
     
