@@ -28,7 +28,11 @@ class FileExists(Exception):
 
 
 def unify(lst):
-    """ ((50, 100), (100, 150), (190, 210)) -> ((50, 150), (190, 210)) """
+    """ unify continuous ranges.
+    
+    >>> unify(((50, 100), (100, 150), (190, 210)))
+    [[50, 150], [190, 210]]
+    """
     ret = [list(lst[0])]
     lst = lst[1:]
     for elem in lst:
@@ -95,13 +99,13 @@ class Audio(wave.Wave_read):
         self.rewind()
         return unify(silence)
     
-    def get_silence_deep(self, pause_seconds=2, silence_cap=500):
-        """ Search more aggressively for silence. Processes every frame. 
+    def get_silence_deep(self, pause_seconds=2, silence_cap=500, steps=200):
+        """ Search more aggressively for silence. Processes steps frames at a 
+        time. 
         This needs more CPU-Power but should find silence better as with the
         other function some silence might be left out. 
         
         This also seems to yield more false positives. """
-        steps = 200
         # Ensure file is at beginning
         self.rewind()
         # Tell how many frames pause_seconds is
@@ -147,7 +151,8 @@ class Audio(wave.Wave_read):
             f.close()
 
 
-def split_phono(file_name, directory, pause_seconds=2, volume_cap=300):
+def split_phono(file_name, directory, pause_seconds=2, volume_cap=300, 
+                min_length=10):
     """ Only change pause_seconds or volume_cap if you are sure what you are 
     doing! They seem to be working pretty good for old records. """
     if not os.path.exists(directory):
@@ -157,13 +162,17 @@ def split_phono(file_name, directory, pause_seconds=2, volume_cap=300):
     audio = Audio(file_name)
     silence = audio.get_silence(pause_seconds, volume_cap)
     split_tracks = audio.split_silence(silence)
+    minus = 0
     for i, split_track in enumerate(split_tracks):
-        if len(split_track) / (audio.channels * audio.width) \ 
-           < 10 * audio.framerate:
-            # Skip tracks shorter than 10 seconds.
+        if len(split_track) / (audio.channels * audio.width) \
+           < min_length * audio.framerate:
+            # Prevent track numbers to be left out because of too short
+            # tracks.
+            minus+=1
+            # Skip tracks shorter than min_length seconds.
             # As on old records that could be the pick-up.
             continue
-        f_name = os.path.join(directory, "track_%.2d.wav" % i)
+        f_name = os.path.join(directory, "track_%.2d.wav" % i-minus)
         audio.write_frames(f_name, split_track)
 
 
