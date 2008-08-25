@@ -88,14 +88,38 @@ class Audio(wave.Wave_read):
                     frame = self.readframes(afterloop_frames)
                     volume = audioop.rms(frame, width)
                 else:
-                    tmp = self.tell()
-                    silence[-1][1] = tmp
-                    i = tmp
+                    silence[-1][1] = i = self.tell()
                     set_i = False
             if set_i:
                 i += read_frames
         self.rewind()
         return unify(silence)
+    
+    def get_silence_deep(self, pause_seconds=2, silence_cap=500):
+        """ Search more aggressively for silence. Processes every frame. 
+        This needs more CPU-Power but should find silence better as with the
+        other function some silence might be left out. 
+        
+        This also seems to yield more false positives. """
+        steps = 200
+        # Ensure file is at beginning
+        self.rewind()
+        # Tell how many frames pause_seconds is
+        read_frames = int(pause_seconds * self.framerate)
+        silence = []
+        width = self.width
+        frames = self.frames
+        i = 0
+        while i < frames:
+            # Read one frame
+            frame = self.readframes(steps)
+            volume = audioop.rms(frame, width)
+            if volume < silence_cap:
+                # Frame is silence
+                silence.append([i, i+steps])
+            i+=steps
+        return [[mini, maxi] for mini, maxi in unify(silence) 
+                if maxi - mini > read_frames]
     
     def split_silence(self, silence):
         """ Split the file according to the silence contained in silence. This 
@@ -134,7 +158,8 @@ def split_phono(file_name, directory, pause_seconds=2, volume_cap=300):
     silence = audio.get_silence(pause_seconds, volume_cap)
     split_tracks = audio.split_silence(silence)
     for i, split_track in enumerate(split_tracks):
-        if len(split_track) < 10 * audio.framerate:
+        if len(split_track) / (audio.channels * audio.width) \ 
+           < 10 * audio.framerate:
             # Skip tracks shorter than 10 seconds.
             # As on old records that could be the pick-up.
             continue
