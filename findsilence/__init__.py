@@ -45,7 +45,8 @@ def unify(lst):
 
 
 class Audio(wave.Wave_read):
-    """ Improve functionality for wave.Wave_read """
+    """ Improve functionality for wave.Wave_read with silence finding 
+    capabilities. """
     def __init__(self, file_name):
         wave.Wave_read.__init__(self, file_name)
         self.width = self.getsampwidth()
@@ -54,7 +55,10 @@ class Audio(wave.Wave_read):
         self.framerate = self.getframerate()
     
     def median_volume(self):
-        """ Median volume for the whole file """
+        """ Median volume for the whole file. 
+        
+        It returns to the position where
+        the file was before after telling the median volume."""
         pos = self.tell()
         self.rewind()
         median_volume = audioop.rms(
@@ -105,9 +109,8 @@ class Audio(wave.Wave_read):
         This needs more CPU-Power but should find silence better as with the
         other function some silence might be left out. 
         
-        This also seems to yield more false positives. """
-        # Ensure file is at beginning
-        self.rewind()
+        This also seems to yield more false positives, which need to be
+        removed later by filters discarding too short tracks. """
         # Tell how many frames pause_seconds is
         read_frames = int(pause_seconds * self.framerate)
         silence = []
@@ -122,6 +125,7 @@ class Audio(wave.Wave_read):
                 # Frame is silence
                 silence.append([i, i+steps])
             i+=steps
+        # Filter out too short segments of silence.
         return [[mini, maxi] for mini, maxi in unify(silence) 
                 if maxi - mini > read_frames]
     
