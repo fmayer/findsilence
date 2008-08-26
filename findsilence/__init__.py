@@ -24,7 +24,7 @@ import sys
 
 import actions
 
-__version__ = "svn"
+__version__ = "0.1rc1"
 __author__ = "Florian Mayer <flormayer@aim.com>"
 __url__ = ""
 __copyright__ = "(c) 2008 Florian Mayer"
@@ -143,7 +143,7 @@ class Audio(wave.Wave_read):
     
     def get_silence_deep(self, pause_seconds=2, silence_cap=500, 
                          parent_thread=None):
-        """ Search more aggressively for silence. Processes steps frames at a 
+        """ Search more aggressively for silence. Processes a millisecond at a 
         time. 
         This needs more CPU-Power but should find silence better as with the
         other function some silence might be left out. 
@@ -225,7 +225,7 @@ def split_phono(file_name, directory, pause_seconds=2, volume_cap=300,
         if len(split_track) / (audio.channels * audio.width) \
            < min_length * audio.framerate:
             # Prevent track numbers to be left out because of too short
-            # tracks.
+            # tracks in order to ensure consistency.
             minus+=1
             # Skip tracks shorter than min_length seconds.
             # As on old records that could be the pick-up.

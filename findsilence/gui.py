@@ -26,7 +26,7 @@ script_path = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(os.path.join(script_path, '..'))
 
 import findsilence
-import actions
+from findsilence import actions
 
 # Dummy gettext.
 _ = lambda s: s
@@ -82,7 +82,7 @@ class MainPanel(wx.PyPanel, actions.ActionHandler):
     def __init__(self, parent):
         wx.PyPanel.__init__(self, parent)
         actions.ActionHandler.__init__(self)
-        
+
         sizer = wx.BoxSizer(wx.VERTICAL)
         
         wildcard = 'WAV files (*.wav)|*.wav'
