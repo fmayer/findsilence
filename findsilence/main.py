@@ -35,7 +35,7 @@ parser.add_option("-o", "--output", action="store",
                      help="write output to DIRECTORY", default=None)
 
 parser.add_option("-m", "--min", action="store", 
-                     type="int", dest="min", metavar="SECONDS",
+                     type="int", dest="min_", metavar="SECONDS",
                      help="drop tracks shorter than SECONDS", default=10)
 
 parser.add_option("-p", "--pause", action="store", 
@@ -50,6 +50,8 @@ parser.add_option('--quiet', '-q', action='store_const', dest='verbose',
 options, args = parser.parse_args()
 
 if options.gui:
+    # Loading wx when it is not needed would be a waste of resources,
+    # as you can observe it starting up slower when the import is modle-level.
     from gui import create_gui
     create_gui()
 else:
@@ -61,4 +63,4 @@ else:
         else:
             output = options.output
         findsilence.split_phono(track, output, options.pause, 
-                                min_length=options.min)
+                                min_length=options.min_)

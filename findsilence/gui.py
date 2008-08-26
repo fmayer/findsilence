@@ -59,7 +59,7 @@ class Worker(threading.Thread):
 class AdvancedSettings(wx.Dialog):
     """ Allow the user to set advanced settings """
     def __init__(self, parent):
-        wx.Dialog.__init__(self, parent)
+        wx.Dialog.__init__(self, parent, -1, "Advanced Options")
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         pause_sizer = wx.BoxSizer()
         
@@ -183,7 +183,7 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.on_about, about)
     
     def advanced(self, evt):
-        opts = AdvancedSettings(None)
+        opts = AdvancedSettings(self)
         if opts.ShowModal() == wx.ID_OK:
             self.pauses = opts.pauses.Value
         

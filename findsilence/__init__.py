@@ -24,6 +24,12 @@ import sys
 
 import actions
 
+__version__ = "svn"
+__author__ = "Florian Mayer <flormayer@aim.com>"
+__url__ = ""
+__copyright__ = "(c) 2008 Florian Mayer"
+__license__ = "GNU General Public License version 3"
+__bugs__ = ""
 
 class DummyAction:
     """ Dummy action that always returns False for isSet """
@@ -127,7 +133,7 @@ class Audio(wave.Wave_read):
                     set_i = False
             if set_i:
                 i += read_frames
-            # Prevent callback to happen to often, thus draining performance.
+            # Prevent callback to happen too often, thus draining performance.
             if last_emitted is None or last_emitted + self.frames / 100 < i:
                 last_emitted = i
                 # Callback used to update progessbar
