@@ -42,7 +42,7 @@ parser.add_option("-m", "--min", action="store",
 
 parser.add_option("-p", "--pause", action="store", 
                      type="int", dest="pause", metavar="SECONDS",
-                     help="find pauses that are SECONDS long", 
+                     help="find pauses that are more than SECONDS long",
                      default=defaults.pause_seconds)
 
 parser.add_option('--verbose', '-v', action='count', dest='verbose',
@@ -54,7 +54,7 @@ options, args = parser.parse_args()
 
 if options.gui:
     # Loading wx when it is not needed would be a waste of resources,
-    # as you can observe it starting up slower when the import is modle-level.
+    # as you can observe it starting up slower when the import is module-level.
     from gui import create_gui
     create_gui()
 else:
