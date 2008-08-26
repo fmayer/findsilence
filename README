@@ -1,4 +1,25 @@
 Thank you for downloading findsilence.
 
 INSTALLATION
-If you
+If you are running a POSIX system you can install findsilence by running
+'python setup.py install' if you have got setuptools installed. 
+If you do not want to install the software but still want to use it, you can
+just run the 'gui.py' file in the findsilence directory.
+Windows users are advised to double-click on gui.py in order to run the 
+program, although this is untested.
+
+NOTES
+Please mind that findsilence does only accept wav files as input, so if
+you have your file as an mp3 or ogg, you will have to manually decode it 
+to wav. For POSIX users I would recommend using "lame --decode" and "oggdec"
+respectively.
+
+LICENSE
+This program is licensed under the terms of the GNU General Public License 3, 
+for more information consult the COPYING file.
+
+CONTACT
+You can contact the author of the program via email at 
+florNOSPAMmayer(a-t)aim(d-o-t)com (Remove NOSPAM).
+Alternatively you can contact me using jabber at 
+segfaulthunter(at)swissjabber(dot)eu

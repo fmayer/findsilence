@@ -194,7 +194,7 @@ class MainFrame(wx.Frame):
         
         info = wx.AboutDialogInfo()
         info.Name = "Split WAV"
-        info.Version = "0.1"
+        info.Version = "0.1rc1"
         info.Copyright = "(C) 2008 Florian Mayer"
         info.Description = wordwrap("Split WAV allows you to split your WAV "
                                     "files on pauses. \n"
