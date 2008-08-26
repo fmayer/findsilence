@@ -149,7 +149,7 @@ class Audio(wave.Wave_read):
         if parent_thread is None:
             parent_thread = DummyThread()
         # Scan every millisecond.
-        steps = self.framerate / 10
+        steps = self.framerate / 1000
         # Tell how many frames pause_seconds is
         read_frames = int(pause_seconds * self.framerate)
         silence = []
@@ -159,7 +159,7 @@ class Audio(wave.Wave_read):
         while i < frames:
             if parent_thread.stopthread.isSet():
                 raise Cancelled
-            # Read one frame
+            # Read a millisecond
             frame = self.readframes(steps)
             volume = audioop.rms(frame, width)
             if volume < silence_cap:
