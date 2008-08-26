@@ -149,7 +149,7 @@ class MainPanel(wx.PyPanel, actions.ActionHandler):
                            style = wx.PD_CAN_ABORT
                             | wx.PD_APP_MODAL
                             | wx.PD_ELAPSED_TIME
-                            | wx.PD_ESTIMATED_TIME
+                            | wx.PD_REMAINING_TIME
                             )
             
         wx.CallAfter(_init, self, max_)
