@@ -22,6 +22,8 @@ import os
 import os.path
 import sys
 
+import actions
+
 class FileExists(Exception):
     """ This is raised when the directory passed to split_phono is a file """
     pass
@@ -100,10 +102,12 @@ class Audio(wave.Wave_read):
                     set_i = False
             if set_i:
                 i += read_frames
+            # Callback used to update progessbar.
+            actions.emmit_action('current_frame', i)
         self.rewind()
         return unify(silence)
     
-    def get_silence_deep(self, pause_seconds=2, silence_cap=500, steps=200):
+    def get_silence_deep(self, pause_seconds=2, silence_cap=500):
         """ Search more aggressively for silence. Processes steps frames at a 
         time. 
         This needs more CPU-Power but should find silence better as with the
@@ -111,6 +115,7 @@ class Audio(wave.Wave_read):
         
         This also seems to yield more false positives, which need to be
         removed later by filters discarding too short tracks. """
+        steps = self.framerate / 10
         # Tell how many frames pause_seconds is
         read_frames = int(pause_seconds * self.framerate)
         silence = []
@@ -125,6 +130,8 @@ class Audio(wave.Wave_read):
                 # Frame is silence
                 silence.append([i, i+steps])
             i+=steps
+            # Callback used to update progessbar.
+            actions.emmit_action('current_frame', i)
         # Filter out too short segments of silence.
         return [[mini, maxi] for mini, maxi in unify(silence) 
                 if maxi - mini > read_frames]
@@ -164,7 +171,9 @@ def split_phono(file_name, directory, pause_seconds=2, volume_cap=300,
     elif os.path.isfile(directory):
         raise FileExists("The directory you supplied is a file.")
     audio = Audio(file_name)
-    silence = audio.get_silence(pause_seconds, volume_cap)
+    # Callback used to initalize progessbar.
+    actions.emmit_action('frames', audio.frames)
+    silence = audio.get_silence_deep(pause_seconds, volume_cap)
     split_tracks = audio.split_silence(silence)
     minus = 0
     for i, split_track in enumerate(split_tracks):
@@ -176,8 +185,11 @@ def split_phono(file_name, directory, pause_seconds=2, volume_cap=300,
             # Skip tracks shorter than min_length seconds.
             # As on old records that could be the pick-up.
             continue
-        f_name = os.path.join(directory, "track_%.2d.wav" % i-minus)
+        f_name = os.path.join(directory, "track_%.2d.wav" % (i - minus))
         audio.write_frames(f_name, split_track)
+    # Callback to allow UI to do cleanup actions without needing to worry
+    # about the state of the worker Thread.
+    actions.emmit_action('done')
 
 
 def main(file_name):

@@ -18,6 +18,7 @@ import wx
 import sys
 import os.path
 import math
+import threading
 
 from wx.lib.wordwrap import wordwrap
 
@@ -25,12 +26,33 @@ script_path = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(os.path.join(script_path, '..'))
 
 import findsilence
+import actions
 
 # Dummy gettext.
 _ = lambda s: s
 
 
+class Worker(threading.Thread):
+    """ This is the worker Thread doing the real work to prevent the UI from
+    getting unresponsive """
+    def __init__(self, *args, **kwargs):
+        threading.Thread.__init__(self)
+        self.stopthread = threading.Event()
+        self.args = args
+        self.kwargs = kwargs
+    
+    def stop(self):
+        self.stopthread.set()
+
+    def run(self):
+        try:
+            findsilence.split_phono(*self.args, **self.kwargs)
+        except findsilence.FileExists:
+            wx.CallAfter(parent.is_file)
+
+
 class AdvancedSettings(wx.Dialog):
+    """ Allow the user to set advanced settings """
     def __init__(self, parent):
         wx.Dialog.__init__(self, parent)
         main_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -50,9 +72,12 @@ class AdvancedSettings(wx.Dialog):
         main_sizer.Fit(self)
 
 
-class MainPanel(wx.PyPanel):
+class MainPanel(wx.PyPanel, actions.ActionHandler):
+    _decorators = []
     def __init__(self, parent):
         wx.PyPanel.__init__(self, parent)
+        actions.ActionHandler.__init__(self)
+        
         sizer = wx.BoxSizer(wx.VERTICAL)
         
         wildcard = 'WAV files (*.wav)|*.wav'
@@ -91,10 +116,43 @@ class MainPanel(wx.PyPanel):
         file_name = os.path.abspath(self.file_select.Path)
         directory = os.path.abspath(self.dir_select.GetPath())
         frames = self.Parent.pauses
-        try:
-            findsilence.split_phono(file_name, directory, frames)
-        except findsilence.FileExists:
-            wx.MessageBox(_("The directory you've selected is a file"))
+        
+        self.worker = Worker(file_name, directory, frames)
+        self.worker.start()
+    
+    def is_file(self):
+        wx.MessageBox(_("The directory you've selected is a file"))
+    
+    @actions.register_method('current_frame', _decorators)
+    def update_progessbar(self, i):
+        def _update(self, i):
+            (thread_continue, thread_skip) = self.progress.Update(i)
+            if not thread_continue:
+                self.worker.stop()
+        wx.CallAfter(_update, self, i)
+       
+    @actions.register_method('frames', _decorators)    
+    def init_progressbar(self, max_):
+        def _init(self, max_):
+            self.max_ = max_
+            self.progress = wx.ProgressDialog(_("WAV Progress"),
+                           _("Please wait while your file is being processed."),
+                           maximum = max_,
+                           parent=self,
+                           style = wx.PD_CAN_ABORT
+                            | wx.PD_APP_MODAL
+                            | wx.PD_ELAPSED_TIME
+                            | wx.PD_ESTIMATED_TIME
+                            )
+            
+            if self.progress.ShowModal() == wx.ID_CANCEL:
+                self.worker.stop()
+                self.progress.Destroy()
+        wx.CallAfter(_init, self, max_)
+    
+    @actions.register_method('done', _decorators)
+    def done(self, state=None):
+        wx.CallAfter(self.progress.Update, self.max_)
         
         
 class MainFrame(wx.Frame):
