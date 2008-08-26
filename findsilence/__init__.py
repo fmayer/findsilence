@@ -24,6 +24,25 @@ import sys
 
 import actions
 
+
+class DummyAction:
+    """ Dummy action that always returns False for isSet """
+    def isSet(self):
+        return False
+    
+
+class DummyThread:
+    """ Dummy Thread that is used when the functions are used without
+    a parent_thread argument """
+    def __init__(self):
+        self.stopthread = DummyAction()
+
+        
+class Cancelled(Exception):
+    """ Raised when silence detection was cancelled by parent thread """
+    pass
+
+        
 class FileExists(Exception):
     """ This is raised when the directory passed to split_phono is a file """
     pass
@@ -70,11 +89,15 @@ class Audio(wave.Wave_read):
         self.setpos(pos)
         return median_volume
     
-    def get_silence(self, pause_seconds=2, silence_cap=500):
+    def get_silence(self, pause_seconds=2, silence_cap=500, parent_thread=None):
         """ 
         pause_seconds is either an int or a float containing the minimum length 
         of a pause. Silence cap defines what volume level is considered silence.
         """
+        last_emitted = None
+        # Enable function to run without a parent Thread.
+        if parent_thread is None:
+            parent_thread = DummyThread()
         # Find out how many frames the passed second value is
         read_frames = int(pause_seconds * self.framerate)
         # Once silence has been found, continue searching in this interval
@@ -86,6 +109,8 @@ class Audio(wave.Wave_read):
         # This scans the file in steps of read_frames whether a section's volume
         # is lower than silence_cap, if it is it is written to silence.
         while i < frames:
+            if parent_thread.stopthread.isSet():
+                raise Cancelled
             set_i = True
             frame = self.readframes(read_frames)
             volume = audioop.rms(frame, width)
@@ -102,12 +127,16 @@ class Audio(wave.Wave_read):
                     set_i = False
             if set_i:
                 i += read_frames
-            # Callback used to update progessbar.
-            actions.emmit_action('current_frame', i)
+            # Prevent callback to happen to often, thus draining performance.
+            if last_emitted is None or last_emitted + self.frames / 100 < i:
+                last_emitted = i
+                # Callback used to update progessbar
+                actions.emmit_action('current_frame', i)
         self.rewind()
         return unify(silence)
     
-    def get_silence_deep(self, pause_seconds=2, silence_cap=500):
+    def get_silence_deep(self, pause_seconds=2, silence_cap=500, 
+                         parent_thread=None):
         """ Search more aggressively for silence. Processes steps frames at a 
         time. 
         This needs more CPU-Power but should find silence better as with the
@@ -115,6 +144,11 @@ class Audio(wave.Wave_read):
         
         This also seems to yield more false positives, which need to be
         removed later by filters discarding too short tracks. """
+        last_emitted = None
+        # Enable function to run without a parent Thread.
+        if parent_thread is None:
+            parent_thread = DummyThread()
+        # Scan every millisecond.
         steps = self.framerate / 10
         # Tell how many frames pause_seconds is
         read_frames = int(pause_seconds * self.framerate)
@@ -123,6 +157,8 @@ class Audio(wave.Wave_read):
         frames = self.frames
         i = 0
         while i < frames:
+            if parent_thread.stopthread.isSet():
+                raise Cancelled
             # Read one frame
             frame = self.readframes(steps)
             volume = audioop.rms(frame, width)
@@ -130,8 +166,11 @@ class Audio(wave.Wave_read):
                 # Frame is silence
                 silence.append([i, i+steps])
             i+=steps
-            # Callback used to update progessbar.
-            actions.emmit_action('current_frame', i)
+            # Prevent callback to happen to often, thus draining performance.
+            if last_emitted is None or last_emitted + self.frames / 100 < i:
+                last_emitted = i
+                # Callback used to update progessbar
+                actions.emmit_action('current_frame', i)
         # Filter out too short segments of silence.
         return [[mini, maxi] for mini, maxi in unify(silence) 
                 if maxi - mini > read_frames]
@@ -163,7 +202,7 @@ class Audio(wave.Wave_read):
 
 
 def split_phono(file_name, directory, pause_seconds=2, volume_cap=300, 
-                min_length=10):
+                min_length=10, parent_thread=None):
     """ Only change pause_seconds or volume_cap if you are sure what you are 
     doing! They seem to be working pretty good for old records. """
     if not os.path.exists(directory):
@@ -173,7 +212,7 @@ def split_phono(file_name, directory, pause_seconds=2, volume_cap=300,
     audio = Audio(file_name)
     # Callback used to initalize progessbar.
     actions.emmit_action('frames', audio.frames)
-    silence = audio.get_silence_deep(pause_seconds, volume_cap)
+    silence = audio.get_silence_deep(pause_seconds, volume_cap, parent_thread)
     split_tracks = audio.split_silence(silence)
     minus = 0
     for i, split_track in enumerate(split_tracks):

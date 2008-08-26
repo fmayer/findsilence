@@ -39,6 +39,9 @@ class Worker(threading.Thread):
         threading.Thread.__init__(self)
         self.stopthread = threading.Event()
         self.args = args
+        # Make sure self is passed as the parent_thread argument to 
+        # split_phono.
+        kwargs.update({"parent_thread": self})
         self.kwargs = kwargs
     
     def stop(self):
@@ -49,6 +52,8 @@ class Worker(threading.Thread):
             findsilence.split_phono(*self.args, **self.kwargs)
         except findsilence.FileExists:
             wx.CallAfter(parent.is_file)
+        except findsilence.Cancelled:
+            pass
 
 
 class AdvancedSettings(wx.Dialog):
@@ -129,6 +134,8 @@ class MainPanel(wx.PyPanel, actions.ActionHandler):
             (thread_continue, thread_skip) = self.progress.Update(i)
             if not thread_continue:
                 self.worker.stop()
+                self.progress.Destroy()
+        
         wx.CallAfter(_update, self, i)
        
     @actions.register_method('frames', _decorators)    
@@ -137,7 +144,7 @@ class MainPanel(wx.PyPanel, actions.ActionHandler):
             self.max_ = max_
             self.progress = wx.ProgressDialog(_("WAV Progress"),
                            _("Please wait while your file is being processed."),
-                           maximum = max_,
+                           maximum=max_,
                            parent=self,
                            style = wx.PD_CAN_ABORT
                             | wx.PD_APP_MODAL
@@ -145,9 +152,6 @@ class MainPanel(wx.PyPanel, actions.ActionHandler):
                             | wx.PD_ESTIMATED_TIME
                             )
             
-            if self.progress.ShowModal() == wx.ID_CANCEL:
-                self.worker.stop()
-                self.progress.Destroy()
         wx.CallAfter(_init, self, max_)
     
     @actions.register_method('done', _decorators)
