@@ -23,6 +23,7 @@ sys.path.append(os.path.join(script_path, '..'))
 from optparse import OptionParser
 
 import findsilence
+from findsilence import defaults
 
 parser = OptionParser()
 
@@ -36,11 +37,13 @@ parser.add_option("-o", "--output", action="store",
 
 parser.add_option("-m", "--min", action="store", 
                      type="int", dest="min_", metavar="SECONDS",
-                     help="drop tracks shorter than SECONDS", default=10)
+                     help="drop tracks shorter than SECONDS", 
+                     default=defaults.min_length)
 
 parser.add_option("-p", "--pause", action="store", 
                      type="int", dest="pause", metavar="SECONDS",
-                     help="find pauses that are SECONDS long", default=2)
+                     help="find pauses that are SECONDS long", 
+                     default=defaults.pause_seconds)
 
 parser.add_option('--verbose', '-v', action='count', dest='verbose',
                   help="Increase verbosity. Use -vv for very verbose")

@@ -216,7 +216,7 @@ def split_phono(file_name, directory, pause_seconds=2, volume_cap=300,
     elif os.path.isfile(directory):
         raise FileExists("The directory you supplied is a file.")
     audio = Audio(file_name)
-    # Callback used to initalize progessbar.
+    # Callback used to initalize progressbar.
     actions.emmit_action('frames', audio.frames)
     silence = audio.get_silence_deep(pause_seconds, volume_cap, parent_thread)
     split_tracks = audio.split_silence(silence)

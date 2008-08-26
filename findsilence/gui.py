@@ -27,6 +27,7 @@ sys.path.append(os.path.join(script_path, '..'))
 
 import findsilence
 from findsilence import actions
+from findsilence import defaults
 
 # Dummy gettext.
 _ = lambda s: s
@@ -63,7 +64,7 @@ class AdvancedSettings(wx.Dialog):
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         pause_sizer = wx.BoxSizer()
         
-        self.pauses = wx.SpinCtrl(self, initial=2)
+        self.pauses = wx.SpinCtrl(self, initial=defaults.pause_seconds)
         pause_sizer.Add(wx.StaticText(self, -1, _(
             _("Length of Pauses (in sec): "))), 0, 
                         wx.ALIGN_CENTER_VERTICAL)
@@ -122,7 +123,8 @@ class MainPanel(wx.PyPanel, actions.ActionHandler):
         directory = os.path.abspath(self.dir_select.GetPath())
         frames = self.Parent.pauses
         
-        self.worker = Worker(file_name, directory, frames)
+        self.worker = Worker(file_name, directory, frames, 
+                             defaults.volume_cap, defaults.min_length)
         self.worker.start()
     
     def is_file(self):
