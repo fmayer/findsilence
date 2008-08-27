@@ -14,6 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+""" Main command-line interface. Can also be used to invoke GUI. """
+
 import os
 import sys
 
@@ -59,8 +61,19 @@ if options.gui:
     create_gui()
 else:
     tracks = len(args)
+    if not options.output:
+        # If not output directory is specified, fall back to output in the 
+        # current working directory.
+        options.output = os.path.join(os.getcwdu(), "output")
+        if not os.path.exists(options.output):
+            os.mkdir(options.output)
+        else:
+            raise IOError('No output directory given and "output/" already '
+                          'exists in current working directory')
     for track in args:
         if tracks > 1:
+            # If there is more than one track, put each of them into a 
+            # separate directory.
             output = os.path.join(options.output, os.path.splitext(track)[0])
             os.mkdir(output)
         else:

@@ -22,7 +22,7 @@ import os
 import os.path
 import sys
 
-import actions
+from findsilence import actions
 
 __version__ = "0.1rc1"
 __author__ = "Florian Mayer <flormayer@aim.com>"
@@ -235,14 +235,3 @@ def split_phono(file_name, directory, pause_seconds=2, volume_cap=300,
     # Callback to allow UI to do cleanup actions without needing to worry
     # about the state of the worker Thread.
     actions.emmit_action('done')
-
-
-def main(file_name):
-    """ Main command-line interface """
-    directory = os.path.splitext(os.path.split(file_name)[1])[0]
-    directory = os.path.abspath(directory)
-    split_phono(file_name, directory)
-    
-
-if __name__ == "__main__":
-    main(sys.argv[1])
