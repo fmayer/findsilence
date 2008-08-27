@@ -16,7 +16,7 @@
 
 import wx
 import sys
-import os.path
+import os
 import math
 import threading
 
@@ -191,7 +191,7 @@ class MainFrame(wx.Frame):
         
     def on_about(self, evt):
         license = open(os.path.abspath(os.path.join(script_path,
-            '..', "COPYING")))
+            os.pardir, "COPYING")))
         license = license.read()
         
         info = wx.AboutDialogInfo()
