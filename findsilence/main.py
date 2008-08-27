@@ -74,7 +74,8 @@ else:
         if tracks > 1:
             # If there is more than one track, put each of them into a 
             # separate directory.
-            output = os.path.join(options.output, os.path.splitext(track)[0])
+            output = os.path.join(options.output, os.path.splitext(
+                os.path.basename(track))[0])
             os.mkdir(output)
         else:
             output = options.output
