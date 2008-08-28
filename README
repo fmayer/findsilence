@@ -4,9 +4,18 @@ INSTALLATION
 If you are running a POSIX system you can install findsilence by running
 'python setup.py install' if you have got setuptools installed. 
 If you do not want to install the software but still want to use it, you can
-just run the 'gui.py' file in the findsilence directory.
+just run the 'gui.py' file in the findsilence directory for a GUI or run
+'main.py' for the CLI interface. This is not advised though.
 Windows users are advised to double-click on gui.py in order to run the 
 program, although this is untested.
+
+MANUAL INSTALLATION
+If you haven't you setuptools and are unable to install it, please follow
+these instructions to install findsilence onto your system.
+Put the findsilence directory anywhere in your PYTHONPATH, most of the time
+/usr/lib/python2.5/site-packages/ will be okay. Then copy both files in the
+main directory into your /usr/bin/ or /usr/local/bin directory. Then run the
+program by typing in 'gfindsilence' for a GUI or 'findsilence' for a CLI.
 
 NOTES
 Please mind that findsilence does only accept wav files as input, so if
@@ -23,3 +32,4 @@ You can contact the author of the program via email at
 florNOSPAMmayer(a-t)aim(d-o-t)com (Remove NOSPAM).
 Alternatively you can contact me using jabber at 
 segfaulthunter(at)swissjabber(dot)eu
+
