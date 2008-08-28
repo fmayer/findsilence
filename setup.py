@@ -16,9 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-""" Setup file for pypentago. It puts all but the main modules in site-packages 
-and the main scripts into /usr/bin. This script is only usable for POSIX 
-compatible systems. We will supply a separate installer for Windows. """
+""" Setup file. """
 
 from setuptools import setup
 
