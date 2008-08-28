@@ -23,11 +23,13 @@ import threading
 from wx.lib.wordwrap import wordwrap
 
 script_path = os.path.abspath(os.path.dirname(__file__))
-sys.path.append(os.path.join(script_path, '..'))
+sys.path.append(os.path.join(script_path, os.pardir))
 
 import findsilence
+
 from findsilence import actions
 from findsilence import defaults
+from findsilence.copying import license
 
 # Dummy gettext.
 _ = lambda s: s
@@ -190,10 +192,6 @@ class MainFrame(wx.Frame):
             self.pauses = opts.pauses.Value
         
     def on_about(self, evt):
-        license = open(os.path.abspath(os.path.join(script_path,
-            os.pardir, "COPYING")))
-        license = license.read()
-        
         info = wx.AboutDialogInfo()
         info.Name = "Split WAV"
         info.Version = "0.1rc1"

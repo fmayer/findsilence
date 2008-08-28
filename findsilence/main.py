@@ -20,7 +20,7 @@ import os
 import sys
 
 script_path = os.path.abspath(os.path.dirname(__file__))
-sys.path.append(os.path.join(script_path, '..'))
+sys.path.append(os.path.join(script_path, os.pardir))
 
 from optparse import OptionParser
 
@@ -47,9 +47,10 @@ parser.add_option("-p", "--pause", action="store",
                      help="find pauses that are more than SECONDS long",
                      default=defaults.pause_seconds)
 
-parser.add_option('--verbose', '-v', action='count', dest='verbose',
+parser.add_option('-v', '--verbose', action='count', dest='verbose',
                   help="Increase verbosity. Use -vv for very verbose")
-parser.add_option('--quiet', '-q', action='store_const', dest='verbose', 
+
+parser.add_option('-q', '--quiet', action='store_const', dest='verbose', 
                   const=-1, default=0, help="Show only error messages")
 
 options, args = parser.parse_args()
