@@ -19,6 +19,7 @@
 import os
 import sys
 
+# Enable users to run the file without installing the program.
 script_path = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(os.path.join(script_path, os.pardir))
 
@@ -27,58 +28,68 @@ from optparse import OptionParser
 import findsilence
 from findsilence import defaults
 
-parser = OptionParser()
+def main():
+    """ Main entry point for the command line interface """
+    parser = OptionParser()
+    
+    parser.add_option("-g", "--gui", action="store_true", 
+                         dest="gui", default=False,
+                         help="Run Graphical User Interface")
+    
+    parser.add_option("-o", "--output", action="store", 
+                         type="string", dest="output", metavar="DIRECTORY",
+                         help="write output to DIRECTORY", default=None)
+    
+    parser.add_option("-m", "--min", action="store", 
+                         type="int", dest="min_", metavar="SECONDS",
+                         help="drop tracks shorter than SECONDS", 
+                         default=defaults.min_length)
+    
+    parser.add_option("-p", "--pause", action="store", 
+                         type="int", dest="pause", metavar="SECONDS",
+                         help="find pauses that are more than SECONDS long",
+                         default=defaults.pause_seconds)
+    
+    parser.add_option('-v', '--verbose', action='count', dest='verbose',
+                      help="Increase verbosity. Use -vv for very verbose")
+    
+    parser.add_option('-q', '--quiet', action='store_const', dest='verbose', 
+                      const=-1, default=0, help="Show only error messages")
+    
+    options, args = parser.parse_args()
+    
+    if options.gui:
+        # Loading wx when it is not needed would be a waste of resources,
+        # as you can observe it starting up slower when the import is 
+        # module-level.
+        from gui import create_gui
+        create_gui()
+    else:
+        tracks = len(args)
+        if tracks < 1:
+            print "No input file given"
+            sys.exit(1)
+        if not options.output:
+            # If not output directory is specified, fall back to output in the 
+            # current working directory.
+            options.output = os.path.join(os.getcwdu(), "output")
+            if not os.path.exists(options.output):
+                os.mkdir(options.output)
+            else:
+                raise IOError('No output directory given and "output/" already '
+                              'exists in current working directory')
+        for track in args:
+            if tracks > 1:
+                # If there is more than one track, put each of them into a 
+                # separate directory.
+                output = os.path.join(options.output, os.path.splitext(
+                    os.path.basename(track))[0])
+                os.mkdir(output)
+            else:
+                output = options.output
+            findsilence.split_phono(track, output, options.pause, 
+                                    min_length=options.min_)
 
-parser.add_option("-g", "--gui", action="store_true", 
-                     dest="gui", default=False,
-                     help="Run Graphical User Interface")
-
-parser.add_option("-o", "--output", action="store", 
-                     type="string", dest="output", metavar="DIRECTORY",
-                     help="write output to DIRECTORY", default=None)
-
-parser.add_option("-m", "--min", action="store", 
-                     type="int", dest="min_", metavar="SECONDS",
-                     help="drop tracks shorter than SECONDS", 
-                     default=defaults.min_length)
-
-parser.add_option("-p", "--pause", action="store", 
-                     type="int", dest="pause", metavar="SECONDS",
-                     help="find pauses that are more than SECONDS long",
-                     default=defaults.pause_seconds)
-
-parser.add_option('-v', '--verbose', action='count', dest='verbose',
-                  help="Increase verbosity. Use -vv for very verbose")
-
-parser.add_option('-q', '--quiet', action='store_const', dest='verbose', 
-                  const=-1, default=0, help="Show only error messages")
-
-options, args = parser.parse_args()
-
-if options.gui:
-    # Loading wx when it is not needed would be a waste of resources,
-    # as you can observe it starting up slower when the import is module-level.
-    from gui import create_gui
-    create_gui()
-else:
-    tracks = len(args)
-    if not options.output:
-        # If not output directory is specified, fall back to output in the 
-        # current working directory.
-        options.output = os.path.join(os.getcwdu(), "output")
-        if not os.path.exists(options.output):
-            os.mkdir(options.output)
-        else:
-            raise IOError('No output directory given and "output/" already '
-                          'exists in current working directory')
-    for track in args:
-        if tracks > 1:
-            # If there is more than one track, put each of them into a 
-            # separate directory.
-            output = os.path.join(options.output, os.path.splitext(
-                os.path.basename(track))[0])
-            os.mkdir(output)
-        else:
-            output = options.output
-        findsilence.split_phono(track, output, options.pause, 
-                                min_length=options.min_)
+            
+if __name__ == "__main__":
+    main()

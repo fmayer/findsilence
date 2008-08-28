@@ -22,6 +22,9 @@ import threading
 
 from wx.lib.wordwrap import wordwrap
 
+# Add parent directory to PYTHONPATH. This enables the program to be run by
+# just running gui.py, thus enabling the users to run the program without
+# installing it.
 script_path = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(os.path.join(script_path, os.pardir))
 

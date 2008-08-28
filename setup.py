@@ -35,8 +35,11 @@ setup(
     packages=['findsilence'],
     scripts=[ ],
     entry_points = {
+        'console_scripts': [
+            'findsilence = findsilence.main:main',
+            ], 
         'gui_scripts': [
-            'findsilence = findsilence.gui:create_gui',
+            'gfindsilence = findsilence.gui:create_gui',
             ],
     },
 
