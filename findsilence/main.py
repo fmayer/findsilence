@@ -30,7 +30,7 @@ from findsilence import defaults
 
 def main():
     """ Main entry point for the command line interface """
-    parser = OptionParser()
+    parser = OptionParser("findsilence [options] [input files]")
     
     parser.add_option("-g", "--gui", action="store_true", 
                          dest="gui", default=False,
@@ -67,7 +67,7 @@ def main():
     else:
         tracks = len(args)
         if tracks < 1:
-            print "No input file given"
+            print parser.get_usage()
             sys.exit(1)
         if not options.output:
             # If not output directory is specified, fall back to output in the 
