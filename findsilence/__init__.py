@@ -143,8 +143,8 @@ class Audio(wave.Wave_read):
     
     def get_silence_deep(self, pause_seconds=2, silence_cap=500, 
                          parent_thread=None):
-        """ Search more aggressively for silence. Processes a millisecond at a 
-        time. 
+        """ Search more aggressively for silence. Processes a two seconds 
+        starting from every millisecond. 
         This needs more CPU-Power but should find silence better as with the
         other function some silence might be left out. 
         
@@ -165,8 +165,10 @@ class Audio(wave.Wave_read):
         while i < frames:
             if parent_thread.stopthread.isSet():
                 raise Cancelled
-            # Read a millisecond
-            frame = self.readframes(steps)
+            # Read pause_seconds seconds
+            frame = self.readframes(read_frames)
+            # Rewind to next step
+            self.setpos(i + steps)
             volume = audioop.rms(frame, width)
             if volume < silence_cap:
                 # Frame is silence

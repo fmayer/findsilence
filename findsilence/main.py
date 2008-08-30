@@ -88,6 +88,7 @@ def main():
             else:
                 output = options.output
             findsilence.split_phono(track, output, options.pause, 
+                                    defaults.volume_cap, 
                                     min_length=options.min_)
 
             
