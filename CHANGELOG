@@ -1,0 +1,8 @@
+0.1rc2 -> 0.1rc3
+* Fixed bug where CLI used wrong defaults.
+* Tweaked defaults.
+
+0.1rc1 -> 0.1rc2
+* Improved CLI.
+* Renamed GUI executable to gfindsilence
+* Improved loading time of "About" dialog.
