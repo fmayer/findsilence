@@ -86,7 +86,6 @@ class AdvancedSettings(wx.Dialog):
 
 
 class MainPanel(wx.PyPanel, actions.ActionHandler):
-    _decorators = []
     def __init__(self, parent):
         wx.PyPanel.__init__(self, parent)
         actions.ActionHandler.__init__(self)
@@ -137,7 +136,7 @@ class MainPanel(wx.PyPanel, actions.ActionHandler):
     def is_file(self):
         wx.MessageBox(_("The directory you've selected is a file"))
     
-    @actions.register_method('current_frame', _decorators)
+    @actions.register_method('current_frame')
     def update_progessbar(self, i):
         def _update(self, i):
             (thread_continue, thread_skip) = self.progress.Update(i)
@@ -147,7 +146,7 @@ class MainPanel(wx.PyPanel, actions.ActionHandler):
         
         wx.CallAfter(_update, self, i)
        
-    @actions.register_method('frames', _decorators)    
+    @actions.register_method('frames')
     def init_progressbar(self, max_):
         def _init(self, max_):
             self.max_ = max_
@@ -163,7 +162,7 @@ class MainPanel(wx.PyPanel, actions.ActionHandler):
             
         wx.CallAfter(_init, self, max_)
     
-    @actions.register_method('done', _decorators)
+    @actions.register_method('done')
     def done(self, state=None):
         wx.CallAfter(self.progress.Update, self.max_)
         
