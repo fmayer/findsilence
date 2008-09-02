@@ -1,3 +1,8 @@
+0.1rc3 -> 0.1rc4
+* Audio.get_silence now raises NoSilence if no silence is found.
+* Implemented more sophosticated way to tell whether the operation will
+  override files or not and quit if it would.
+
 0.1rc2 -> 0.1rc3
 * Fixed bug where CLI used wrong defaults.
 * Tweaked defaults.

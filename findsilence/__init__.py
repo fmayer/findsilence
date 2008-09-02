@@ -54,12 +54,21 @@ class FileExists(Exception):
     pass
 
 
+class NoSilence(Exception):
+    """ Raised when no silence is found in a file """
+    pass
+
+
 def unify(lst):
     """ unify continuous ranges.
     
     >>> unify(((50, 100), (100, 150), (190, 210)))
     [[50, 150], [190, 210]]
     """
+    if not lst:
+        # Prevent exception for empty list
+        return []
+    
     ret = [list(lst[0])]
     lst = lst[1:]
     for elem in lst:
@@ -139,6 +148,8 @@ class Audio(wave.Wave_read):
                 # Callback used to update progessbar
                 actions.emmit_action('current_frame', i)
         self.rewind()
+        if not silence:
+            raise NoSilence
         return unify(silence)
     
     def get_silence_deep(self, pause_seconds=2, silence_cap=500, 

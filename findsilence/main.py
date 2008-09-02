@@ -25,7 +25,6 @@ sys.path.append(os.path.join(script_path, os.pardir))
 
 from optparse import OptionParser
 
-import findsilence
 from findsilence import defaults
 
 def main():
@@ -35,6 +34,10 @@ def main():
     parser.add_option("-g", "--gui", action="store_true", 
                          dest="gui", default=False,
                          help="Run Graphical User Interface")
+    
+    parser.add_option("-f", "--force", action="store_true", 
+                         dest="force", default=False,
+                         help="Give force to override files")
     
     parser.add_option("-o", "--output", action="store", 
                          type="string", dest="output", metavar="DIRECTORY",
@@ -62,34 +65,12 @@ def main():
         # Loading wx when it is not needed would be a waste of resources,
         # as you can observe it starting up slower when the import is 
         # module-level.
-        from gui import create_gui
-        create_gui()
+        from findsilence.gui import create_gui
+        create_gui(options, args, parser)
     else:
-        tracks = len(args)
-        if tracks < 1:
-            print parser.get_usage()
-            sys.exit(1)
-        if not options.output:
-            # If not output directory is specified, fall back to output in the 
-            # current working directory.
-            options.output = os.path.join(os.getcwdu(), "output")
-            if not os.path.exists(options.output):
-                os.mkdir(options.output)
-            else:
-                raise IOError('No output directory given and "output/" already '
-                              'exists in current working directory')
-        for track in args:
-            if tracks > 1:
-                # If there is more than one track, put each of them into a 
-                # separate directory.
-                output = os.path.join(options.output, os.path.splitext(
-                    os.path.basename(track))[0])
-                os.mkdir(output)
-            else:
-                output = options.output
-            findsilence.split_phono(track, output, options.pause, 
-                                    defaults.volume_cap, 
-                                    min_length=options.min_)
+        from findsilence.cli import create_cli
+        create_cli(options, args, parser)
+            
 
             
 if __name__ == "__main__":

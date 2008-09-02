@@ -60,6 +60,8 @@ class Worker(threading.Thread):
             wx.CallAfter(parent.is_file)
         except findsilence.Cancelled:
             pass
+        except findsilence.NoSilence:
+            wx.CallAfter(wx.MessageBox, _("No silence could be found"))
 
 
 class AdvancedSettings(wx.Dialog):
@@ -153,7 +155,7 @@ class MainPanel(wx.PyPanel, actions.ActionHandler):
                            _("Please wait while your file is being processed."),
                            maximum=max_,
                            parent=self,
-                           style = wx.PD_CAN_ABORT
+                           style=wx.PD_CAN_ABORT
                             | wx.PD_APP_MODAL
                             | wx.PD_ELAPSED_TIME
                             | wx.PD_REMAINING_TIME
@@ -210,7 +212,7 @@ class MainFrame(wx.Frame):
         wx.AboutBox(info)
 
 
-def create_gui():
+def create_gui(options=None, args=None, parser=None):
     app = wx.PySimpleApp()
 
     frame = MainFrame()
