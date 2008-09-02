@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# pyPentago - a board game
+# findsilence - Split long WAV files into tracks
 # Copyright (C) 2008 Florian Mayer
 
 # This program is free software: you can redistribute it and/or modify
