@@ -25,6 +25,8 @@ from findsilence import defaults
 
 
 def check_overwrite(args, options):
+    """ Check whether splitting the tracks contained in args might overwrite 
+    files in options.output. """
     file_regex = re.compile("track_\d\d.wav")
     tracks = len(args)
     if tracks < 2:
@@ -36,14 +38,15 @@ def check_overwrite(args, options):
         # Each track gets its own sub directory in options.output
         for track in map(get_output_name, args):
             path = os.path.join(options.output, track)
-            if os.path.exists(path):
-                if lendir_if(path, lambda x: file_regex.match(x)):
-                    # We could overwrite a track_??.wav in a sub-directory.
-                    return False
+            if os.path.exists(path) and \
+               lendir_if(path, lambda x: file_regex.match(x)):
+                # We could overwrite a track_??.wav in a sub-directory.
+                return False
     return True
 
 
 def lendir_if(path, cond):
+    """ Count all elements in path where cond evaluates True. """
     return sum(1 for x in os.listdir(path) if cond(x))
 
 
@@ -53,6 +56,8 @@ def get_output_name(track):
 
 
 def create_cli(options, args, parser):
+    """ Create the CLI according to options and args. Parser is needed to show 
+    help upon invalid input """
     tracks = len(args)
     if tracks < 1:
         print parser.get_usage()
