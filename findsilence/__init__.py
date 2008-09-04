@@ -239,7 +239,7 @@ def split_phono(file_name, directory, pause_seconds=2, volume_cap=300,
            < min_length * audio.framerate:
             # Prevent track numbers to be left out because of too short
             # tracks in order to ensure consistency.
-            minus+=1
+            minus += 1
             # Skip tracks shorter than min_length seconds.
             # As on old records that could be the pick-up.
             continue

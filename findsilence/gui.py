@@ -17,7 +17,6 @@
 import wx
 import sys
 import os
-import math
 import threading
 
 from wx.lib.wordwrap import wordwrap
@@ -56,8 +55,6 @@ class Worker(threading.Thread):
     def run(self):
         try:
             findsilence.split_phono(*self.args, **self.kwargs)
-        except findsilence.FileExists:
-            wx.CallAfter(parent.is_file)
         except findsilence.Cancelled:
             pass
         except findsilence.NoSilence:
