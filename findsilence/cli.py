@@ -72,7 +72,7 @@ def create_cli(options, args, parser):
         # --force not used and program would overwrite files. 
         # Abort and inform user.
         print ('Output directory contains files that may be '
-               'overridden by the program. Skipping.')
+               'overwritten by the program. Skipping.')
         sys.exit(2)
     
     for track in args:
