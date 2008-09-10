@@ -80,15 +80,48 @@ def unify(lst):
     return ret
 
 
-class Audio(wave.Wave_read):
-    """ Improve functionality for wave.Wave_read with silence finding 
-    capabilities. """
-    def __init__(self, file_name):
-        wave.Wave_read.__init__(self, file_name)
-        self.width = self.getsampwidth()
-        self.frames = self.getnframes()
-        self.channels = self.getnchannels()
-        self.framerate = self.getframerate()
+class Audio:
+    """ This class implements the silence finding. File-type specific mechanics
+    have to be overridden by child classes representing the file-types."""
+    def __init__(self):
+        pass
+    
+    # These methods and attributes must be overridden by child classes. 
+    def rms(self, frames):
+        """ Override this to return the root-mean-square of the frames. """
+        raise NotImplementedError
+    
+    def tell(self):
+        """ Override this to return current position. """
+        raise NotImplementedError
+    
+    def setpos(self, pos):
+        """ Override this to set the current position. """
+        raise NotImplementedError
+    
+    def rewind(self):
+        """ Rewind file to beginning. Should be equivalent to setpos(0) """
+        raise NotImplementedError
+    
+    def readframes(self, x):
+        """ Override to return x frames from current position. These frames 
+        must be passed to rms directly. """
+        raise NotImplementedError
+    
+    def write_frames(self, file_name, frames):
+        """ Override this to write frames to file_name in the specified 
+        file format """
+        raise NotImplementedError
+    
+    @property
+    def frames(self):
+        """ Total amount of frames """
+        raise NotImplementedError
+    
+    @property
+    def framerate(self):
+        """ Frames per second """
+        raise NotImplementedError
     
     def median_volume(self):
         """ Median volume for the whole file. 
@@ -97,10 +130,7 @@ class Audio(wave.Wave_read):
         the file was before after telling the median volume."""
         pos = self.tell()
         self.rewind()
-        median_volume = audioop.rms(
-            self.readframes(self.frames),
-            self.width
-        )
+        median_volume = self.rms(self.readframes(self.frames))
         self.setpos(pos)
         return median_volume
     
@@ -117,7 +147,6 @@ class Audio(wave.Wave_read):
         read_frames = int(pause_seconds * self.framerate)
         # Once silence has been found, continue searching in this interval
         afterloop_frames = 20
-        width = self.width
         frames = self.frames
         i = self.tell()
         silence = []
@@ -128,7 +157,7 @@ class Audio(wave.Wave_read):
                 raise Cancelled
             set_i = True
             frame = self.readframes(read_frames)
-            volume = audioop.rms(frame, width)
+            volume = self.rms(frame)
             if volume < silence_cap:
                 # Segment is silence!
                 silence.append([i, i+read_frames])
@@ -136,7 +165,7 @@ class Audio(wave.Wave_read):
                 # longer than read_frames but smaller than read_frames*2.
                 while volume < silence_cap and self.tell() < self.frames:
                     frame = self.readframes(afterloop_frames)
-                    volume = audioop.rms(frame, width)
+                    volume = self.rms(frame)
                 else:
                     silence[-1][1] = i = self.tell()
                     set_i = False
@@ -170,7 +199,6 @@ class Audio(wave.Wave_read):
         # Tell how many frames pause_seconds is
         read_frames = int(pause_seconds * self.framerate)
         silence = []
-        width = self.width
         frames = self.frames
         i = 0
         while i < frames:
@@ -180,7 +208,7 @@ class Audio(wave.Wave_read):
             frame = self.readframes(read_frames)
             # Rewind to next step
             self.setpos(i + steps)
-            volume = audioop.rms(frame, width)
+            volume = self.rms(frame)
             if volume < silence_cap:
                 # Frame is silence
                 silence.append([i, i+steps])
@@ -207,6 +235,17 @@ class Audio(wave.Wave_read):
             from_pos = next_from
         return ret
 
+
+class Wave(wave.Wave_read, Audio):
+    """ This class implements the Wave file-type so it is suiteable for use 
+    with Audio. It takes most of its methods from wave.Wave_read. """
+    def __init__(self, file_name):
+        wave.Wave_read.__init__(self, file_name)
+        self.width = self.getsampwidth()
+        self.frames = self.getnframes()
+        self.channels = self.getnchannels()
+        self.framerate = self.getframerate()
+    
     def write_frames(self, file_name, frames):
         """ Write the frames into file_name with the same header as the 
         original file had """
@@ -218,6 +257,24 @@ class Audio(wave.Wave_read):
             f.writeframes(frames)
         finally:
             f.close()
+    
+    def rms(self, frames):
+        """ Get root-mean-square of frames in the wave file """
+        return audioop.rms(frames, self.width)
+    
+
+class MP3(Audio):
+    """ Implement Audio API for MP3 files. This includes the following methods 
+    and attributes: rms, tell, setpos, rewind, readframes, write_frames, 
+    frames and framerate """
+    pass
+
+
+class Ogg(Audio):
+    """ Implement Audio API for ogg files. This includes the following methods 
+    and attributes: rms, tell, setpos, rewind, readframes, write_frames, 
+    frames and framerate """
+    pass
 
 
 def split_phono(file_name, directory, pause_seconds=2, volume_cap=300, 
@@ -228,7 +285,7 @@ def split_phono(file_name, directory, pause_seconds=2, volume_cap=300,
         os.mkdir(directory)
     elif os.path.isfile(directory):
         raise FileExists("The directory you supplied is a file.")
-    audio = Audio(file_name)
+    audio = Wave(file_name)
     # Callback used to initalize progressbar.
     actions.emmit_action('frames', audio.frames)
     silence = audio.get_silence(pause_seconds, volume_cap, parent_thread)
