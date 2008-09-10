@@ -14,7 +14,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-""" This module provides functionality to split files by silence detection """
+""" This module provides functionality to split files by silence detection.
+
+The Audio class implements the silence detection while its child classes, like
+Wave, MP3 or Ogg, have to implement the file types.
+
+They need to implment these methods: rms, tell, setpos, rewind, readframes, 
+write_frames, and the attributes frames and framerate. 
+
+It uses the actions module to communicate with the underlying user-interface. 
+The action 'frames' is emitted by split_phono to pass the total amount of 
+frames in the file to the user-interface. While the file is being processed, 
+'current_frame' actions are emitted so the user-interface can show the 
+progress. 'done' is emitted once the whole operation is finished. """
 
 import wave
 import audioop
@@ -105,7 +117,7 @@ class Audio:
     
     def readframes(self, x):
         """ Override to return x frames from current position. These frames 
-        must be passed to rms directly. """
+        are passed to rms directly. """
         raise NotImplementedError
     
     def write_frames(self, file_name, frames):
