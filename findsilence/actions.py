@@ -116,13 +116,18 @@ This is foo
 
 """
 
-# Increment by one everytime the file's API is changed!
-__version__ = 4
-
 import inspect
 import warnings
+from base64 import b64decode
 
 from collections import defaultdict
+
+# Increment by one everytime the file's API is changed!
+__version__ = 4
+__author__ = "Florian Mayer"
+# Import module to obtain email-address in readable form.
+__contact__ = b64decode("Zmxvcm1heWVyQGFpbS5jb20=")
+__license__ = "GPLv3"
 
 
 def require(version):
@@ -165,12 +170,12 @@ class Context:
     def remove_handler(self, action, exc):
         """ Remove the function exc from the list of hooks for action. """
         self.actions[action] = [x for x in self.actions[action]
-                                if not x[0] is exc]
+                                if x[0] is not exc]
     
     def remove_function(self, exc):
         """ Remove the function exc from the list of hooks for any action. """
         for action, exc_list in self.actions:
-            exc_list = [x for x in exc_list if x[0] is exc]
+            exc_list = [x for x in exc_list if x[0] is not exc]
         
     def delete_action(self, action):
         """ Delete all handlers associated with action. """
@@ -179,23 +184,29 @@ class Context:
     def emmit_action(self, action, state=None):
         """ Call all the functions associated with action with state as first 
         argument, unless they are nostate handlers. """
+        ret = []
         for callback in self.actions[action]:
             exc, args, kwargs, no_state = callback
             try:
                 if no_state:
                     # Do not pass state to nostate handlers.
-                    exc(*args, **kwargs)
+                    ret.append(exc(*args, **kwargs))
                 else:
-                    exc(state, *args, **kwargs)
+                    ret.append(exc(state, *args, **kwargs))
             except StopHandling:
                 break
+        return ret
     
     def register(self, action):
         """ Associate decorated function with action. """
-        def decorate(f):
-            self.register_handler(action, f)
-            return f
+        def decorate(exc):
+            self.register_handler(action, exc)
+            return exc
         return decorate
+    
+    def clear(self):
+        """ Reset context to inital state. """
+        self.actions = defaultdict(list)
 
 
 # Create default context and expose its methods on module level.
@@ -204,9 +215,11 @@ _inst = Context()
 register_handler = _inst.register_handler
 register_nostate_handler = _inst.register_nostate_handler
 remove_handler = _inst.remove_handler
+remove_function = _inst.remove_function
 delete_action = _inst.delete_action
 emmit_action = _inst.emmit_action
 register = _inst.register
+clear = _inst.clear
 
 
 def register_method(action, lst=None):
@@ -217,11 +230,13 @@ def register_method(action, lst=None):
         # Developer still seems to use old version including _decorators.
         warnings.warn("Using register_method with lst is deprecated", 
                       DeprecationWarning, 2)
-    def decorate(f):
-        if not hasattr(f, '_bind_to'):
-            f._bind_to = []
-        f._bind_to.append(action)
-        return f
+    def decorate(exc):
+        """ Append action to functions _bind_to attribute, if that does
+        not exist, set it to an empty list """
+        if not hasattr(exc, '_bind_to'):
+            exc._bind_to = []
+        exc._bind_to.append(action)
+        return exc
     return decorate
 
 
@@ -257,61 +272,3 @@ class ActionHandler:
         """
         for action, handler_func in self.__actions.items():
             self.__context.remove_handler(action, handler_func)
-
-
-# Testing purposes
-if __name__ == '__main__':
-    _test()
-    
-    class Foo(ActionHandler):
-        def __init__(self):
-            ActionHandler.__init__(self)
-            self.test = "foobar"
-        
-        @register_method('foo')
-        def foo(self, state):
-            print self.test
-        
-        @register_method('bar')
-        def bar(self, state):
-            print "bar"
-    
-    
-    @register('baz')
-    def baz(state):
-        print 'foo'
-    
-    
-    @register('foo')
-    def foo_bar(state):
-        print "foo bar"
-    
-        
-    def baaz():
-        print 'baaz'
-    
-
-    register_nostate_handler('baz', baaz)
-    foo = Foo()
-    print "-- foo"    
-    emmit_action('foo')
-    print "-- bar"
-    emmit_action('bar')
-    print "-- baz"
-    emmit_action('baz')
-    # Check remove_handlers.
-    print "-- foo"
-    foo.remove_handlers()
-    emmit_action('foo')
-    print "-- context"
-    cont = Context()
-    class Bar(ActionHandler):
-        def __init__(self):
-            ActionHandler.__init__(self, cont)
-        
-        @register_method('baar')
-        def baar(self, state):
-            print 'baar'
-    bar = Bar()
-    cont.emmit_action('baar')
-    
