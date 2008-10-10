@@ -45,11 +45,11 @@ The methods can be bound to a actions using the register_method decorator.
 ...             ActionHandler.__init__(self)
 ...     @register_method("foo")
 ...     def foo(self, state):
-...             print "foo", state
+...             print "foo.", state
 ... 
 >>> handlers = Handlers()
 >>> emmit_action("foo", "this is the state")
-foo this is the state
+foo. this is the state
 >>> 
 
 Context
@@ -170,12 +170,12 @@ class ActionHandler:
     not be bound. 
     """
     def __init__(self, context=_inst):
-        self.__actions = []
-        self.context = context
+        self.__actions = {}
+        self.__context = context
         for name, method in inspect.getmembers(self):
             if hasattr(method, '_bind_to'):
-                self.__actions.append(method._bind_to)
-                self.context.register_handler(method._bind_to, method)
+                self.__actions[method._bind_to] = method
+                self.__context.register_handler(method._bind_to, method)
                 
     def remove_actions(self):
         """ This deletes all actions that were associated with methods of the 
@@ -185,19 +185,15 @@ class ActionHandler:
         other handlers that may be associated with the given action. 
         """
         for action in self.__actions:
-            self.context.delete_action(action)
+            self.__context.delete_action(action)
     
     def remove_handlers(self):
         """ This deassociates all handlers of this class from the actions. 
         
         In difference to remove_action this does not delete any other handlers 
         """
-        for action in self.__actions:
-            for handler in self.context.actions[action]:
-                handler_func = handler[0]
-                if inspect.ismethod(handler_func) and \
-                   handler_func.im_self is self:
-                    self.context.remove_handler(action, handler_func)
+        for action, handler_func in self.__actions.items():
+            self.__context.remove_handler(action, handler_func)
 
 
 # Testing purposes
@@ -225,19 +221,32 @@ if __name__ == '__main__':
     def foo_bar(self):
         print "foo bar"
     
+        
     def baaz():
         print 'baaz'
     
+
     register_nostate_handler('baz', baaz)
     foo = Foo()
-    print "--"    
+    print "-- foo"    
     emmit_action('foo')
-    print "--"
+    print "-- bar"
     emmit_action('bar')
-    print "--"
+    print "-- baz"
     emmit_action('baz')
     # Check remove_handlers.
-    print "--"
+    print "-- foo"
     foo.remove_handlers()
     emmit_action('foo')
+    print "-- context"
+    cont = Context()
+    class Bar(ActionHandler):
+        def __init__(self):
+            ActionHandler.__init__(self, cont)
+        
+        @register_method('baar')
+        def baar(self, state):
+            print 'baar'
+    bar = Bar()
+    cont.emmit_action('baar')
     
