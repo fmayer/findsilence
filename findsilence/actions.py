@@ -15,6 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
+NOTE: Each of the examples is self-contained, which means you will have
+to use a new context, replace the default context or start a new python
+session in order to make them yield the displayed results.
 
 Decorators
 ==========
@@ -31,6 +34,19 @@ action.
 ... 
 >>> emmit_action("baz", "state")
 state
+>>> 
+
+You can also bind a function to multiple actions using the decorator syntax.
+
+>>> @register('foo')
+... @register('bar')
+... def quuz(state):
+...     print "spam! eggs!"
+... 
+>>> emmit_action('foo')
+spam! eggs!
+>>> emmit_action('bar')
+spam! eggs!
 >>> 
 
 Bound methods
@@ -52,17 +68,56 @@ The methods can be bound to a actions using the register_method decorator.
 foo. this is the state
 >>> 
 
+As with normal functions, you can also bind a method to multiple actions.
+
+>>> class Foo(ActionHandler):
+...     def __init__(self):
+...             ActionHandler.__init__(self)
+...     @register_method('foo')
+...     @register_method('bar')
+...     def quuz(self, state):
+...             print "spam! eggs!"
+... 
+>>> foo = Foo()
+>>> emmit_action('foo')
+spam! eggs!
+>>> emmit_action('bar')
+spam! eggs!
+>>> 
+
 Context
 =======
 The functions exposed at module level use the default context.
 If you need serveral parts of your application to use actions 
 independantely, specify a context object for each of them, and use 
-its methods and/or pass itto the constructor of ActionHandler or 
+its methods and/or pass it to the constructor of ActionHandler or 
 to register when using decorators.
+
+>>> context = Context()
+>>> other_context = Context()
+>>> class Foo(ActionHandler):
+...     def __init__(self):
+...             ActionHandler.__init__(self, context)
+...     @register_method('foo')
+...     def foo(self, state):
+...             print "This is Foo.foo"
+... 
+>>> @other_context.register('foo')
+... def foo(state):
+...     print "This is foo"
+... 
+>>> foo = Foo() # Instantiate to enable bound-method binding.
+>>> context.emmit_action('foo')
+This is Foo.foo
+>>> other_context.emmit_action('foo') # Same action in different context
+This is foo
+>>> emmit_action('foo') # We did not touch the default context.
+>>> 
+
 """
 
-# Increment by one everytime the file is changed!
-__version__ = 3
+# Increment by one everytime the file's API is changed!
+__version__ = 4
 
 import inspect
 import warnings
@@ -112,6 +167,11 @@ class Context:
         self.actions[action] = [x for x in self.actions[action]
                                 if not x[0] is exc]
     
+    def remove_function(self, exc):
+        """ Remove the function exc from the list of hooks for any action. """
+        for action, exc_list in self.actions:
+            exc_list = [x for x in exc_list if x[0] is exc]
+        
     def delete_action(self, action):
         """ Delete all handlers associated with action. """
         del self.actions[action]
@@ -129,6 +189,13 @@ class Context:
                     exc(state, *args, **kwargs)
             except StopHandling:
                 break
+    
+    def register(self, action):
+        """ Associate decorated function with action. """
+        def decorate(f):
+            self.register_handler(action, f)
+            return f
+        return decorate
 
 
 # Create default context and expose its methods on module level.
@@ -139,6 +206,7 @@ register_nostate_handler = _inst.register_nostate_handler
 remove_handler = _inst.remove_handler
 delete_action = _inst.delete_action
 emmit_action = _inst.emmit_action
+register = _inst.register
 
 
 def register_method(action, lst=None):
@@ -150,15 +218,9 @@ def register_method(action, lst=None):
         warnings.warn("Using register_method with lst is deprecated", 
                       DeprecationWarning, 2)
     def decorate(f):
-        f._bind_to = action
-        return f
-    return decorate
-
-
-def register(action, context=_inst):
-    """ Associate decorated function with action. """
-    def decorate(f):
-        context.register_handler(action, f)
+        if not hasattr(f, '_bind_to'):
+            f._bind_to = []
+        f._bind_to.append(action)
         return f
     return decorate
 
@@ -174,8 +236,9 @@ class ActionHandler:
         self.__context = context
         for name, method in inspect.getmembers(self):
             if hasattr(method, '_bind_to'):
-                self.__actions[method._bind_to] = method
-                self.__context.register_handler(method._bind_to, method)
+                for bind_to in method._bind_to:
+                    self.__actions[bind_to] = method
+                    self.__context.register_handler(bind_to, method)
                 
     def remove_actions(self):
         """ This deletes all actions that were associated with methods of the 
@@ -198,6 +261,8 @@ class ActionHandler:
 
 # Testing purposes
 if __name__ == '__main__':
+    _test()
+    
     class Foo(ActionHandler):
         def __init__(self):
             ActionHandler.__init__(self)
@@ -218,7 +283,7 @@ if __name__ == '__main__':
     
     
     @register('foo')
-    def foo_bar(self):
+    def foo_bar(state):
         print "foo bar"
     
         
