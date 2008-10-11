@@ -22,6 +22,38 @@ class _Test(unittest.TestCase):
         self.assertEqual(emmit_action('foo'), ['foobar'])
         self.assertEqual(emmit_action('bar'), ['bar'])
     
+    def test_removehandlers(self):
+        class Foo(ActionHandler):
+            def __init__(self):
+                ActionHandler.__init__(self)
+                self.test = "foobar"
+            
+            @register_method('foo')
+            def foo(self, state):
+                return self.test
+        
+        foo = Foo()
+        register_handler('foo', lambda x: 'foo')
+        self.assertEqual(emmit_action('foo'), ['foobar', 'foo'])
+        foo.remove_handlers()
+        self.assertEqual(emmit_action('foo'), ['foo'])
+
+    def test_removeactions(self):
+        class Foo(ActionHandler):
+            def __init__(self):
+                ActionHandler.__init__(self)
+                self.test = "foobar"
+            
+            @register_method('foo')
+            def foo(self, state):
+                return self.test
+        
+        foo = Foo()
+        register_handler('foo', lambda x: 'foo')
+        self.assertEqual(emmit_action('foo'), ['foobar', 'foo'])
+        foo.remove_actions()
+        self.assertEqual(emmit_action('foo'), [])
+
     def test_register(self):
         @register('baz')
         def baz(state):
