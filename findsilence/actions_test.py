@@ -70,7 +70,7 @@ class _Test(unittest.TestCase):
         self.assertEqual(emmit_action('foo'), ['foobar'])
         self.assertEqual(emmit_action('bar'), ['foobar'])
     
-    def test_register_multiple(self):
+    def test_multiple(self):
         @register('foo', 'bar')
         def baz(state):
             return 'foo-bar'
