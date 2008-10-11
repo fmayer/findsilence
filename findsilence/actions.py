@@ -130,13 +130,6 @@ __contact__ = b64decode("Zmxvcm1heWVyQGFpbS5jb20=")
 __license__ = "GPLv3"
 
 
-def require(version):
-    """ Raise ImportWarning if version of this file is older than the value 
-    passed to require. """
-    if __version__ < version:
-        raise ImportWarning("Version of actions is older than the required one")
-
-
 class StopHandling(Exception):
     """ Raising this exception in an action handler prevents all the 
     successive handlers from being executed. """
@@ -197,10 +190,11 @@ class Context:
                 break
         return ret
     
-    def register(self, action):
+    def register(self, *actions):
         """ Associate decorated function with action. """
         def decorate(exc):
-            self.register_handler(action, exc)
+            for action in actions:
+                self.register_handler(action, exc)
             return exc
         return decorate
     
