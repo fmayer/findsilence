@@ -16,7 +16,7 @@
 
 """
 NOTE: Each of the examples is self-contained, which means you will have
-to use a new context, replace the default context or start a new python
+to use a new context, clean the default context or start a new python
 session in order to make them yield the displayed results.
 
 Decorators
@@ -248,7 +248,7 @@ class ActionHandler:
                 for bind_to in method._bind_to:
                     self.__actions[bind_to] = method
                     self.__context.register_handler(bind_to, method)
-                
+    
     def remove_actions(self):
         """ This deletes all actions that were associated with methods of the 
         class.
