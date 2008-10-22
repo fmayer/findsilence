@@ -35,6 +35,7 @@ import os.path
 import sys
 
 from findsilence import actions
+from findsilence import defaults
 
 __version__ = "0.1rc1"
 __author__ = "Florian Mayer <flormayer@aim.com>"
@@ -192,47 +193,6 @@ class Audio:
         if not silence:
             raise NoSilence
         return unify(silence)
-    
-    def get_silence_deep(self, pause_seconds=2, silence_cap=500, 
-                         parent_thread=None):
-        """ Search more aggressively for silence. Processes a two seconds 
-        starting from every millisecond. 
-        This needs more CPU-Power but should find silence better as with the
-        other function some silence might be left out. 
-        
-        This also seems to yield more false positives, which need to be
-        removed later by filters discarding too short tracks. """
-        last_emitted = None
-        # Enable function to run without a parent Thread.
-        if parent_thread is None:
-            parent_thread = DummyThread()
-        # Scan every millisecond.
-        steps = self.framerate / 1000
-        # Tell how many frames pause_seconds is
-        read_frames = int(pause_seconds * self.framerate)
-        silence = []
-        frames = self.frames
-        i = 0
-        while i < frames:
-            if parent_thread.stopthread.isSet():
-                raise Cancelled
-            # Read pause_seconds seconds
-            frame = self.readframes(read_frames)
-            # Rewind to next step
-            self.setpos(i + steps)
-            volume = self.rms(frame)
-            if volume < silence_cap:
-                # Frame is silence
-                silence.append([i, i+steps])
-            i+=steps
-            # Prevent callback to happen to often, thus draining performance.
-            if last_emitted is None or last_emitted + self.frames / 100 < i:
-                last_emitted = i
-                # Callback used to update progessbar
-                actions.emmit_action('current_frame', i)
-        # Filter out too short segments of silence.
-        return [[mini, maxi] for mini, maxi in unify(silence) 
-                if maxi - mini > read_frames]
     
     def split_silence(self, silence):
         """ Split the file according to the silence contained in silence. This 
