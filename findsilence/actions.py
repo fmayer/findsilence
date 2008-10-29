@@ -129,6 +129,9 @@ __author__ = "Florian Mayer"
 __contact__ = b64decode("Zmxvcm1heWVyQGFpbS5jb20=")
 __license__ = "GPLv3"
 
+FAIL = 2
+WARN = 1
+IGNORE = 0
 
 class StopHandling(Exception):
     """ Raising this exception in an action handler prevents all the 
@@ -142,15 +145,25 @@ class Context:
     You may want to use contexts if you have got two independant things that
     both need to use actions, then you can define a context for each of them.
     """
-    def __init__(self):
+    def __init__(self, offers=None, severity=WARN):
         self.actions = defaultdict(list)
+        self.offered = offers
+        if offers is None or severity == IGNORE:
+            self._not_offered = lambda x: None
+        elif severity == WARN:
+            self._not_offered = self._warn_if_not_offered
+        elif severity == FAIL:
+            self._not_offered = self._fail_if_not_offered
+        else:
+            raise ValueError("Invalid verbosity")
         
     def register_handler(self, action, exc, *args, **kwargs):
-        """ Register exc to the action action with additional paramenters to be 
+        """ Register exc to the action action with additional paramenters to be
         passed to the hook function. 
         
         Registering multiple hooks for the same 
         action will execute them in order of registration. """
+        self._not_offered(action)
         self.actions[action].append((exc, args, kwargs, False))
     
     def register_nostate_handler(self, action, exc, *args, **kwargs):
@@ -158,6 +171,7 @@ class Context:
         
         Please only use this rarely and only for handlers that would only take 
         None as state. Useful for binding directly to framework functions. """
+        self._not_offered(action)
         self.actions[action].append((exc, args, kwargs, True))
         
     def remove_handler(self, action, exc):
@@ -177,6 +191,7 @@ class Context:
     def emmit_action(self, action, state=None):
         """ Call all the functions associated with action with state as first 
         argument, unless they are nostate handlers. """
+        self._not_offered(action)
         ret = []
         for callback in self.actions[action]:
             exc, args, kwargs, no_state = callback
@@ -201,6 +216,28 @@ class Context:
     def clear(self):
         """ Reset context to inital state. """
         self.actions = defaultdict(list)
+    
+    def offers(self, action):
+        """ Tell whether the context offers given action. Always returns
+        True if self.offers is None. """
+        return self.offered is None or action in self.offered
+    
+    def _warn_if_not_offered(self, action):
+        """ Warn if the context defines the actions it offers but action
+        is not in them.
+        
+        You shouldn't need this method. """
+        if not self.offers(action):
+            warnings.warn("Context defines the actions it offers and %s is not"
+                          "contained" % action, stacklevel=3)
+    
+    def _fail_if_not_offered(self, action):
+        """ Raise ValueError if the context defines the actions it 
+        offers but action is not in them.
+        
+        You shouldn't need this method. """
+        if not self.offers(action):
+            raise ValueError("Action unknown by Context")
 
 
 # Create default context and expose its methods on module level.

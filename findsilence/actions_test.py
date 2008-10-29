@@ -2,9 +2,22 @@
 
 import unittest
 from actions import (ActionHandler, register_handler, register_method, register,
-                     emmit_action, clear, register_nostate_handler, Context)
+                     emmit_action, clear, register_nostate_handler, Context, 
+                     FAIL)
 
 class _Test(unittest.TestCase):
+    def test_offers(self):
+        context = Context(['answer'], FAIL)
+        # Test cases where it should fail.
+        self.assertRaises(ValueError, context.register_handler,
+                          'foo', lambda x: 'bar')
+        self.assertRaises(ValueError, context.register_nostate_handler,
+                          'foo', lambda: 'bar')
+        self.assertRaises(ValueError, context.emmit_action, 'bar')
+        # Test case where it shouldn't fail.
+        context.register_handler('answer', lambda x: 42)
+        self.assertEqual(context.emmit_action('answer'), [42])
+    
     def test_actionhandler(self):
         class Foo(ActionHandler):
             def __init__(self):
