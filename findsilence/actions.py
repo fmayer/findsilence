@@ -118,8 +118,8 @@ This is foo
 
 import inspect
 import warnings
-from base64 import b64decode
 
+from base64 import b64decode
 from collections import defaultdict
 
 # Increment by one everytime the file's API is changed!
@@ -167,7 +167,7 @@ class Context:
         self.actions[action].append((exc, args, kwargs, False))
     
     def register_nostate_handler(self, action, exc, *args, **kwargs):
-        """ Register handler that does *NOT* take state as first argument. 
+        """ Register handler that does not take state as first argument. 
         
         Please only use this rarely and only for handlers that would only take 
         None as state. Useful for binding directly to framework functions. """
@@ -190,7 +190,10 @@ class Context:
     
     def emmit_action(self, action, state=None):
         """ Call all the functions associated with action with state as first 
-        argument, unless they are nostate handlers. """
+        argument, unless they are nostate handlers. 
+        
+        Returns a list of return values of all the handlers, in order
+        of calling. """
         self._not_offered(action)
         ret = []
         for callback in self.actions[action]:
@@ -228,8 +231,7 @@ class Context:
         
         You shouldn't need this method. """
         if not self.offers(action):
-            warnings.warn("Context defines the actions it offers and %s is not"
-                          "contained" % action, stacklevel=3)
+            warnings.warn("Action %r unknown by Context" % action, stacklevel=3)
     
     def _fail_if_not_offered(self, action):
         """ Raise ValueError if the context defines the actions it 
@@ -237,7 +239,7 @@ class Context:
         
         You shouldn't need this method. """
         if not self.offers(action):
-            raise ValueError("Action unknown by Context")
+            raise ValueError("Action %r unknown by Context" % action)
 
 
 # Create default context and expose its methods on module level.
