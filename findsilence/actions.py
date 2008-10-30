@@ -116,7 +116,6 @@ This is foo
 
 """
 
-import inspect
 import warnings
 
 from base64 import b64decode
@@ -132,6 +131,24 @@ __license__ = "GPLv3"
 FAIL = 2
 WARN = 1
 IGNORE = 0
+
+def getmembers(object, predicate=None):
+    """Return all members of an object as (name, value) pairs sorted by name.
+    Optionally, only return members that satisfy a given predicate."""
+    # I am aware that this is already implemented in inspect, but
+    # a) It's better when it's a generator
+    # b) I need it to swallow exceptions, some frameworks raise them
+    #    when getting attributes. Don't ask me...
+    for key in dir(object):
+        try:
+            value = getattr(object, key)
+        except Exception:
+            # Yes. That happens! I'm looking at you, wxPython!
+            # We shouldn't need these members anyway. Go on.
+            continue
+        if not predicate or predicate(value):
+            yield (key, value)
+
 
 class StopHandling(Exception):
     """ Raising this exception in an action handler prevents all the 
@@ -282,7 +299,7 @@ class ActionHandler:
     def __init__(self, context=_inst):
         self.__actions = {}
         self.__context = context
-        for name, method in inspect.getmembers(self):
+        for name, method in getmembers(self):
             if hasattr(method, '_bind_to'):
                 for bind_to in method._bind_to:
                     self.__actions[bind_to] = method
