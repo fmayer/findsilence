@@ -222,7 +222,7 @@ class Context:
     
     def offers(self, action):
         """ Tell whether the context offers given action. Always returns
-        True if self.offers is None. """
+        True if self.offered is None. """
         return self.offered is None or action in self.offered
     
     def _warn_if_not_offered(self, action):
