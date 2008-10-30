@@ -123,7 +123,7 @@ from base64 import b64decode
 from collections import defaultdict
 
 # Increment by one everytime the file's API is changed!
-__version__ = 4
+__version__ = 5
 __author__ = "Florian Mayer"
 # Import module to obtain email-address in readable form.
 __contact__ = b64decode("Zmxvcm1heWVyQGFpbS5jb20=")
