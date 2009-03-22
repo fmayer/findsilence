@@ -34,7 +34,7 @@ def check_overwrite(args, options):
         if lendir_if(options.output, lambda x: file_regex.match(x)):
             # We could overwrite a track_??.wav file.
             return False
-    elif tracks > 1:
+    else:
         # Each track gets its own sub directory in options.output
         for track in map(get_output_name, args):
             path = os.path.join(options.output, track)
@@ -85,7 +85,7 @@ def create_cli(options, args, parser):
             output = options.output
         try:
             findsilence.split_phono(track, output, options.pause, 
-                                    defaults.volume_cap, 
+                                    options.volume_cap, 
                                     min_length=options.min_)
         except findsilence.Cancelled:
             print "Operation Cancelled"

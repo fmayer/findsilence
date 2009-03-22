@@ -32,16 +32,16 @@ def main():
     parser = OptionParser("findsilence [options] [input files]")
     
     parser.add_option("-g", "--gui", action="store_true", 
-                         dest="gui", default=False,
-                         help="Run Graphical User Interface")
+                      dest="gui", default=False,
+                      help="Run Graphical User Interface")
     
     parser.add_option("-f", "--force", action="store_true", 
-                         dest="force", default=False,
-                         help="Give force to override files")
+                      dest="force", default=False,
+                      help="Give force to override files")
     
     parser.add_option("-o", "--output", action="store", 
-                         type="string", dest="output", metavar="DIRECTORY",
-                         help="write output to DIRECTORY", default=None)
+                      type="string", dest="output", metavar="DIRECTORY",
+                      help="write output to DIRECTORY", default=None)
     
     parser.add_option("-m", "--min", action="store", 
                          type="int", dest="min_", metavar="SECONDS",
@@ -49,9 +49,14 @@ def main():
                          default=defaults.min_length)
     
     parser.add_option("-p", "--pause", action="store", 
-                         type="int", dest="pause", metavar="SECONDS",
-                         help="find pauses that are more than SECONDS long",
-                         default=defaults.pause_seconds)
+                      type="int", dest="pause", metavar="SECONDS",
+                      help="find pauses that are more than SECONDS long",
+                      default=defaults.pause_seconds)
+    
+    parser.add_option("-s", "--silence", action="store", 
+                      type="int", dest="volume_cap", metavar="VOLUME",
+                      help="Assume everything lower than VOLUME silence.",
+                      default=defaults.volume_cap)
     
     parser.add_option('-v', '--verbose', action='count', dest='verbose',
                       help="Increase verbosity. Use -vv for very verbose")
@@ -64,7 +69,8 @@ def main():
     if options.gui:
         # Loading wx when it is not needed would be a waste of resources,
         # as you can observe it starting up slower when the import is 
-        # module-level.
+        # module-level. Plus, using the CLI won't fail if we don't have
+        # wxPython this way.
         from findsilence.gui import create_gui
         create_gui(options, args, parser)
     else:
