@@ -44,12 +44,12 @@ def main():
                       help="write output to DIRECTORY", default=None)
     
     parser.add_option("-m", "--min", action="store", 
-                         type="int", dest="min_", metavar="SECONDS",
-                         help="drop tracks shorter than SECONDS", 
-                         default=defaults.min_length)
+                      type="float", dest="min_", metavar="SECONDS",
+                      help="drop tracks shorter than SECONDS", 
+                      default=defaults.min_length)
     
     parser.add_option("-p", "--pause", action="store", 
-                      type="int", dest="pause", metavar="SECONDS",
+                      type="float", dest="pause", metavar="SECONDS",
                       help="find pauses that are more than SECONDS long",
                       default=defaults.pause_seconds)
     
