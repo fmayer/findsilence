@@ -250,6 +250,7 @@ class Wave(wave.Wave_read, Audio):
     
     @property
     def max_amplitude(self):
+        # This is only an approximation.
         if self._max_amplitude is not None:
             return self._max_amplitude
         
@@ -265,10 +266,12 @@ class Wave(wave.Wave_read, Audio):
             if rms > max_:
                 max_ = rms
         self.setpos(pos)
+        self._max_amplitude = max_
         return max_
     
     @property
     def min_amplitude(self):
+        # This is only an approximation.
         if self._min_amplitude is not None:
             return self._min_amplitude
         
@@ -284,6 +287,7 @@ class Wave(wave.Wave_read, Audio):
             if min_ is None or rms < min_:
                 min_ = rms
         self.setpos(pos)
+        self._min_amplitude = min_
         return min_
 
 
