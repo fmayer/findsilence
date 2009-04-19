@@ -327,6 +327,7 @@ def split_phono(file_name, directory, pause_seconds=2, volume_cap=300,
             from_pos = 0
             for to_pos, next_from in silence:
                 if (to_pos - from_pos) >= min_length * audio.framerate:
+                    # Track is long enough to be considered a track.
                     n += 1
                 from_pos = next_from
             
