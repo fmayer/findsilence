@@ -16,6 +16,6 @@
 
 """ Sane default values for splitting old records """
 
-pause_seconds = 2
-volume_cap = 300
+pause_seconds = 3
+volume_cap = 200
 min_length = 20

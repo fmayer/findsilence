@@ -86,7 +86,8 @@ def create_cli(options, args, parser):
         try:
             findsilence.split_phono(track, output, options.pause, 
                                     options.volume_cap, 
-                                    min_length=options.min_)
+                                    min_length=options.min_,
+                                    tracks=options.tracks)
         except findsilence.Cancelled:
             print "Operation Cancelled"
         except findsilence.NoSilence:

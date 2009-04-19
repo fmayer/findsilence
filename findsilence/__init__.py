@@ -136,6 +136,16 @@ class Audio:
         """ Frames per second """
         raise NotImplementedError
     
+    @property
+    def max_amplitude(self):
+        """ Maximal amplitude in file """
+        raise NotImplementedError
+    
+    @property
+    def min_amplitude(self):
+        """ Minimum amplitude in file """
+        raise NotImplementedError
+    
     def median_volume(self):
         """ Median volume for the whole file. 
         
@@ -205,6 +215,7 @@ class Audio:
             self.setpos(from_pos)
             ret.append(self.readframes(to_pos-from_pos))
             from_pos = next_from
+        self.rewind()
         return ret
 
 
@@ -217,6 +228,9 @@ class Wave(wave.Wave_read, Audio):
         self.frames = self.getnframes()
         self.channels = self.getnchannels()
         self.framerate = self.getframerate()
+        
+        self._max_amplitude = None
+        self._min_amplitude = None
     
     def write_frames(self, file_name, frames):
         """ Write the frames into file_name with the same header as the 
@@ -234,6 +248,44 @@ class Wave(wave.Wave_read, Audio):
         """ Get root-mean-square of frames in the wave file """
         return audioop.rms(frames, self.width)
     
+    @property
+    def max_amplitude(self):
+        if self._max_amplitude is not None:
+            return self._max_amplitude
+        
+        pos = self.tell()
+        self.rewind()
+        
+        max_ = 0
+        read_frames = int(0.5 * self.framerate)
+        frame = 0
+        while self.tell() < self.frames:
+            frames = self.readframes(read_frames)
+            rms = self.rms(frames)
+            if rms > max_:
+                max_ = rms
+        self.setpos(pos)
+        return max_
+    
+    @property
+    def min_amplitude(self):
+        if self._min_amplitude is not None:
+            return self._min_amplitude
+        
+        pos = self.tell()
+        self.rewind()
+        
+        min_ = None
+        read_frames = int(0.5 * self.framerate)
+        frame = 0
+        while self.tell() < self.frames:
+            frames = self.readframes(read_frames)
+            rms = self.rms(frames)
+            if min_ is None or rms < min_:
+                min_ = rms
+        self.setpos(pos)
+        return min_
+
 
 class MP3(Audio):
     """ Implement Audio API for MP3 files. This includes the following methods 
@@ -250,7 +302,7 @@ class Ogg(Audio):
 
 
 def split_phono(file_name, directory, pause_seconds=2, volume_cap=300, 
-                min_length=10, parent_thread=None):
+                min_length=10, parent_thread=None, tracks=None):
     """ Only change pause_seconds or volume_cap if you are sure what you are 
     doing! They seem to be working pretty good for old records. """
     if not os.path.exists(directory):
@@ -260,8 +312,38 @@ def split_phono(file_name, directory, pause_seconds=2, volume_cap=300,
     audio = Wave(file_name)
     # Callback used to initalize progressbar.
     actions.emmit_action('frames', audio.frames)
-    silence = audio.get_silence(pause_seconds, volume_cap, parent_thread)
+    
+    if tracks is not None:
+        min_ = audio.min_amplitude
+        max_ = audio.max_amplitude
+        print min_, max_
+        while True:
+            mid = min_ + (max_ - min_) / 2.0
+            
+            silence = audio.get_silence(
+                pause_seconds, mid, parent_thread
+            )
+            n = 0
+            from_pos = 0
+            for to_pos, next_from in silence:
+                if (to_pos - from_pos) >= min_length * audio.framerate:
+                    n += 1
+                from_pos = next_from
+            
+            if n == tracks:
+                # Yay. We're done. Outta here!
+                break
+            elif n > tracks:
+                # We split too often. Need to consider less as silence.
+                max_ = mid
+            else:
+                # We split too seldom. Need to consider more as silence.
+                min_ = mid
+    else:
+        silence = audio.get_silence(pause_seconds, volume_cap, parent_thread)
+    
     split_tracks = audio.split_silence(silence)
+    
     minus = 0
     for i, split_track in enumerate(split_tracks):
         if len(split_track) / (audio.channels * audio.width) \

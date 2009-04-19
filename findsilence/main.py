@@ -58,6 +58,11 @@ def main():
                       help="Assume everything lower than VOLUME silence.",
                       default=defaults.volume_cap)
     
+    parser.add_option("-t", "--tracks", action="store", 
+                      type="int", dest="tracks", metavar="TRACKS",
+                      help="Adjust the volume cap until it splits into TRACKS tracks.",
+                      default=None)
+    
     parser.add_option('-v', '--verbose', action='count', dest='verbose',
                       help="Increase verbosity. Use -vv for very verbose")
     
