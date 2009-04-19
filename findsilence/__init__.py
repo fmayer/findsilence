@@ -72,27 +72,6 @@ class NoSilence(Exception):
     pass
 
 
-def unify(lst):
-    """ unify continuous ranges.
-    
-    >>> unify(((50, 100), (100, 150), (190, 210)))
-    [[50, 150], [190, 210]]
-    """
-    if not lst:
-        # Prevent exception for empty list
-        return []
-    
-    ret = [list(lst[0])]
-    lst = lst[1:]
-    for elem in lst:
-        if ret[-1][1] == elem[0]:
-            ret[-1][1] = elem[1]
-        else:
-            ret.append(list(elem))
-    
-    return ret
-
-
 class Audio:
     """ This class implements the silence finding. File-type specific mechanics
     have to be overridden by child classes representing the file-types."""
@@ -171,38 +150,39 @@ class Audio:
         # Once silence has been found, continue searching in this interval
         afterloop_frames = 20
         frames = self.frames
-        i = self.tell()
+        initpos = i = self.tell()
         silence = []
         # This scans the file in steps of read_frames whether a section's volume
         # is lower than silence_cap, if it is it is written to silence.
         while i < frames:
             if parent_thread.stopthread.isSet():
                 raise Cancelled
-            set_i = True
             frame = self.readframes(read_frames)
             volume = self.rms(frame)
             if volume < silence_cap:
                 # Segment is silence!
-                silence.append([i, i+read_frames])
                 # Continue searching in smaller steps whether the silence is 
                 # longer than read_frames but smaller than read_frames*2.
                 while volume < silence_cap and self.tell() < self.frames:
                     frame = self.readframes(afterloop_frames)
                     volume = self.rms(frame)
+                # If the last sequent of silence ends where the new one starts
+                # it's a continous range.
+                if silence and silence[-1][1] == i:
+                    silence[-1][1] = self.tell()
                 else:
-                    silence[-1][1] = i = self.tell()
-                    set_i = False
-            if set_i:
-                i += read_frames
+                    silence.append([i, self.tell()])
+            i = self.tell()
+            
             # Prevent callback to happen too often, thus draining performance.
             if last_emitted is None or last_emitted + self.frames / 100 < i:
                 last_emitted = i
                 # Callback used to update progessbar
                 actions.emmit_action('current_frame', i)
-        self.rewind()
-        if not silence:
-            raise NoSilence
-        return unify(silence)
+        
+        # Return the file to where it was when we got it.
+        self.setpos(initpos)
+        return silence
     
     def split_silence(self, silence):
         """ Split the file according to the silence contained in silence. This 
@@ -320,7 +300,6 @@ def split_phono(file_name, directory, pause_seconds=2, volume_cap=300,
     if tracks is not None:
         min_ = audio.min_amplitude
         max_ = audio.max_amplitude
-        print min_, max_
         while True:
             mid = min_ + (max_ - min_) / 2.0
             
@@ -335,8 +314,8 @@ def split_phono(file_name, directory, pause_seconds=2, volume_cap=300,
                     n += 1
                 from_pos = next_from
             
-            if n == tracks:
-                # Yay. We're done. Outta here!
+            if n == tracks or min_ == max_:
+                # Either we're done or we would never be done anyway.
                 break
             elif n > tracks:
                 # We split too often. Need to consider less as silence.
@@ -346,6 +325,9 @@ def split_phono(file_name, directory, pause_seconds=2, volume_cap=300,
                 min_ = mid
     else:
         silence = audio.get_silence(pause_seconds, volume_cap, parent_thread)
+    
+    if not silence:
+        raise NoSilence
     
     split_tracks = audio.split_silence(silence)
     
