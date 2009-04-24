@@ -27,8 +27,10 @@ from optparse import OptionParser
 
 from findsilence import defaults
 
-def main():
+def main(argv=None):
     """ Main entry point for the command line interface """
+    if argv is None:
+        argv = sys.argv[1:]
     parser = OptionParser("findsilence [options] [input files]")
     
     parser.add_option("-g", "--gui", action="store_true", 
@@ -69,7 +71,7 @@ def main():
     parser.add_option('-q', '--quiet', action='store_const', dest='verbose', 
                       const=-1, default=0, help="Show only error messages")
     
-    options, args = parser.parse_args()
+    options, args = parser.parse_args(argv)
     
     if options.gui:
         # Loading wx when it is not needed would be a waste of resources,
