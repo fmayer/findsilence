@@ -44,17 +44,12 @@ __copyright__ = "(c) 2008 Florian Mayer"
 __license__ = "GNU General Public License version 3"
 __bugs__ = ""
 
-class DummyAction:
-    """ Dummy action that always returns False for isSet """
-    def isSet(self):
-        return False
-    
 
 class DummyThread:
     """ Dummy Thread that is used when the functions are used without
     a parent_thread argument """
-    def __init__(self):
-        self.stopthread = DummyAction()
+    def is_stopped(self):
+        return False
 
         
 class Cancelled(Exception):
@@ -155,7 +150,7 @@ class Audio:
         # This scans the file in steps of read_frames whether a section's volume
         # is lower than silence_cap, if it is it is written to silence.
         while i < frames:
-            if parent_thread.stopthread.isSet():
+            if parent_thread.is_stopped():
                 raise Cancelled
             frame = self.readframes(read_frames)
             volume = self.rms(frame)

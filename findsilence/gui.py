@@ -51,6 +51,9 @@ class Worker(threading.Thread):
     
     def stop(self):
         self.stopthread.set()
+    
+    def is_stopped(self):
+        return self.stopthread.isSet()
 
     def run(self):
         try:
