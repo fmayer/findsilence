@@ -22,11 +22,10 @@ Wave, MP3 or Ogg, have to implement the file types.
 They need to implment these methods: rms, tell, setpos, rewind, readframes, 
 write_frames, and the attributes frames and framerate. """
 
-import wave
 import audioop
-import os
-import os.path
+import wave
 import sys
+import os
 
 from findsilence import defaults
 
