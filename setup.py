@@ -35,14 +35,7 @@ setup(
     entry_points = {
         'console_scripts': [
             'findsilence = findsilence.main:main',
-            ], 
-        'gui_scripts': [
-            'gfindsilence = findsilence.gui:create_gui',
             ],
     },
-
-
-    install_requires=[
-        ],
 )
 

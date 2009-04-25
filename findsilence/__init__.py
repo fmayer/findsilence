@@ -20,13 +20,7 @@ The Audio class implements the silence detection while its child classes, like
 Wave, MP3 or Ogg, have to implement the file types.
 
 They need to implment these methods: rms, tell, setpos, rewind, readframes, 
-write_frames, and the attributes frames and framerate. 
-
-It uses the actions module to communicate with the underlying user-interface. 
-The action 'frames' is emitted by split_phono to pass the total amount of 
-frames in the file to the user-interface. While the file is being processed, 
-'current_frame' actions are emitted so the user-interface can show the 
-progress. 'done' is emitted once the whole operation is finished. """
+write_frames, and the attributes frames and framerate. """
 
 import wave
 import audioop
@@ -34,7 +28,6 @@ import os
 import os.path
 import sys
 
-from findsilence import actions
 from findsilence import defaults
 
 __version__ = "0.1rc1"
@@ -45,9 +38,24 @@ __license__ = "GNU General Public License version 3"
 __bugs__ = ""
 
 
+
+class DummyNotifier(object):
+    def current_frame(self, frame):
+        pass
+    
+    def total_frames(self, frames):
+        pass
+    
+    def done(self):
+        pass
+
+
 class DummyThread:
     """ Dummy Thread that is used when the functions are used without
     a parent_thread argument """
+    def __init__(self):
+        self.notifier = DummyNotifier()
+    
     def is_stopped(self):
         return False
 
@@ -173,7 +181,7 @@ class Audio:
             if last_emitted is None or last_emitted + self.frames / 100 < i:
                 last_emitted = i
                 # Callback used to update progessbar
-                actions.emmit_action('current_frame', i)
+                parent_thread.notifier.current_frame(i)
         
         # Return the file to where it was when we got it.
         self.setpos(initpos)
@@ -284,13 +292,15 @@ def split_phono(file_name, directory, pause_seconds=2, volume_cap=300,
                 min_length=10, parent_thread=None, tracks=None):
     """ Only change pause_seconds or volume_cap if you are sure what you are 
     doing! They seem to be working pretty good for old records. """
+    if parent_thread is None:
+        parent_thread = DummyThread()
     if not os.path.exists(directory):
         os.mkdir(directory)
     elif os.path.isfile(directory):
         raise FileExists("The directory you supplied is a file.")
     audio = Wave(file_name)
     # Callback used to initalize progressbar.
-    actions.emmit_action('frames', audio.frames)
+    parent_thread.notifier.total_frames(audio.frames)
     
     if tracks is not None:
         min_ = audio.min_amplitude
@@ -340,4 +350,4 @@ def split_phono(file_name, directory, pause_seconds=2, volume_cap=300,
         audio.write_frames(f_name, split_track)
     # Callback to allow UI to do cleanup actions without needing to worry
     # about the state of the worker Thread.
-    actions.emmit_action('done')
+    parent_thread.notifier.done()

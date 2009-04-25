@@ -25,18 +25,14 @@ sys.path.append(os.path.join(script_path, os.pardir))
 
 from optparse import OptionParser
 
-from findsilence import defaults
+from findsilence import defaults, cli
 
 def main(argv=None):
     """ Main entry point for the command line interface """
     if argv is None:
         argv = sys.argv[1:]
     parser = OptionParser("findsilence [options] [input files]")
-    
-    parser.add_option("-g", "--gui", action="store_true", 
-                      dest="gui", default=False,
-                      help="Run Graphical User Interface")
-    
+
     parser.add_option("-f", "--force", action="store_true", 
                       dest="force", default=False,
                       help="Give force to override files")
@@ -73,16 +69,7 @@ def main(argv=None):
     
     options, args = parser.parse_args(argv)
     
-    if options.gui:
-        # Loading wx when it is not needed would be a waste of resources,
-        # as you can observe it starting up slower when the import is 
-        # module-level. Plus, using the CLI won't fail if we don't have
-        # wxPython this way.
-        from findsilence.gui import create_gui
-        create_gui(options, args, parser)
-    else:
-        from findsilence.cli import create_cli
-        create_cli(options, args, parser)
+    cli.create_cli(options, args, parser)
             
 
             
