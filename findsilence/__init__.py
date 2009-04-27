@@ -186,19 +186,48 @@ class Audio:
         self.setpos(initpos)
         return silence
     
-    def split_silence(self, silence):
-        """ Split the file according to the silence contained in silence. This 
-        is usually the return value of Audio.get_silence.
-        
-        Returns a list of frames, each being a separate song """
+    def tracks(self, silence, min_length):
         from_pos = 0
-        ret = []
         for to_pos, next_from in silence:
-            self.setpos(from_pos)
-            ret.append(self.readframes(to_pos-from_pos))
+            if (to_pos - from_pos) >= min_length * self.framerate:
+                # Track is long enough to be considered a track.
+                yield from_pos, to_pos
             from_pos = next_from
-        self.rewind()
-        return ret
+    
+    def track_data(self, tracks):
+        for from_pos, to_pos in tracks:
+            self.setpos(from_pos)
+            yield self.readframes(to_pos - from_pos)
+
+    def split_into(self, tracks, min_length, pause_seconds, parent_thread):
+        min_ = self.min_amplitude
+        max_ = self.max_amplitude
+        while True:
+            mid = min_ + (max_ - min_) / 2.0
+            
+            silence = self.get_silence(
+                pause_seconds, mid, parent_thread
+            )
+            n = len(list(self.tracks(silence, min_length)))
+            
+            if n == tracks or min_ == max_:
+                # Either we're done or we would never be done anyway.
+                break
+            elif n > tracks:
+                # We split too often. Need to consider less as silence.
+                max_ = mid
+            else:
+                # We split too seldom. Need to consider more as silence.
+                min_ = mid
+    
+        return silence
+
+    @classmethod
+    def from_file(cls, filename):
+        if filename.lower().endswith('.wav'):
+            return Wave(filename)
+        else:
+            raise ValueError
 
 
 class Wave(wave.Wave_read, Audio):
@@ -297,43 +326,19 @@ def split_phono(file_name, directory, pause_seconds=2, volume_cap=300,
         os.mkdir(directory)
     elif os.path.isfile(directory):
         raise FileExists("The directory you supplied is a file.")
-    audio = Wave(file_name)
+    audio = Audio.from_file(file_name)
     # Callback used to initalize progressbar.
     parent_thread.notifier.total_frames(audio.frames)
     
     if tracks is not None:
-        min_ = audio.min_amplitude
-        max_ = audio.max_amplitude
-        while True:
-            mid = min_ + (max_ - min_) / 2.0
-            
-            silence = audio.get_silence(
-                pause_seconds, mid, parent_thread
-            )
-            n = 0
-            from_pos = 0
-            for to_pos, next_from in silence:
-                if (to_pos - from_pos) >= min_length * audio.framerate:
-                    # Track is long enough to be considered a track.
-                    n += 1
-                from_pos = next_from
-            
-            if n == tracks or min_ == max_:
-                # Either we're done or we would never be done anyway.
-                break
-            elif n > tracks:
-                # We split too often. Need to consider less as silence.
-                max_ = mid
-            else:
-                # We split too seldom. Need to consider more as silence.
-                min_ = mid
+        silence = audio.split_into(tracks, min_length, pause_seconds, parent_thread)
     else:
         silence = audio.get_silence(pause_seconds, volume_cap, parent_thread)
     
     if not silence:
         raise NoSilence
     
-    split_tracks = audio.split_silence(silence)
+    split_tracks = audio.track_data(audio.tracks(silence, min_length))
     
     minus = 0
     for i, split_track in enumerate(split_tracks):
